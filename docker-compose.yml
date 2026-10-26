@@ -1,0 +1,11 @@
+services:
+  pipeline:
+    build: .
+    env_file: .env
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./data:/app/data
+      - ./reports:/app/reports
+      - ./models:/app/models
+      - ./infra:/app/infra
