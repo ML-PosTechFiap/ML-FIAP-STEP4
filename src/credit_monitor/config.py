@@ -112,6 +112,10 @@ RAW_DTYPES: dict[str, str] = {
     for col in RAW_COLUMNS
 }
 
+# --- Retencao (dias, medidos pelo mtime do arquivo) --------------------------------
+
+RETENTION_DAYS = {"quarantine": 30, "logs": 90}
+
 # --- Limiares de monitoramento (spec 6.3) --------------------------------------
 
 PSI_WARN = 0.10

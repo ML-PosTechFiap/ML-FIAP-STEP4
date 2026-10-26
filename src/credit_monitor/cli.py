@@ -6,11 +6,22 @@ import argparse
 from collections.abc import Callable
 
 from credit_monitor.config import Settings
+from credit_monitor.privacy.retention import purge
 
 Command = Callable[[Settings, argparse.Namespace], int]
 
 # As tarefas seguintes registram aqui seus subcomandos.
 COMMANDS: dict[str, Command] = {}
+
+
+def _purge(settings: Settings, args: argparse.Namespace) -> int:
+    counts = purge(settings)
+    print(f"Retenção aplicada: {counts['quarantine']} arquivo(s) removido(s) da quarentena, "
+          f"{counts['logs']} dos logs.")
+    return 0
+
+
+COMMANDS["purge"] = _purge
 
 
 def build_parser() -> argparse.ArgumentParser:
