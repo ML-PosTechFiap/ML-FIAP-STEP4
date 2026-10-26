@@ -196,3 +196,46 @@ def test_synthetic_anomalies_are_counted_per_row(synthetic_raw, valid):
         "annuity_not_null": 12,
     }
     assert len(r.failing_index) == 17
+
+
+def test_unexpected_error_is_logged_and_blocks(valid, monkeypatch, caplog):
+    import logging
+
+    from credit_monitor.contracts import validate as validate_mod
+
+    df, dom = valid
+
+    class BrokenSchema:  # simula regressao do Pandera: o erro nao vem como SchemaErrors
+        def validate(self, *_args, **_kwargs):
+            raise KeyError("defeito no schema")
+
+    monkeypatch.setattr(validate_mod, "build_schema", lambda _domains: BrokenSchema())
+    with caplog.at_level(logging.ERROR, logger=validate_mod.logger.name):
+        r = validate_batch(df, dom)
+    assert not r.passed and r.violations == {"validation_error": 1}
+    assert "KeyError" in r.failures.failure_value.iloc[0]
+    records = [x for x in caplog.records if x.levelno == logging.ERROR]
+    assert records and records[0].exc_info is not None
+
+
+def test_failure_sample_is_spread_across_rules(tmp_path):
+    noisy = pd.DataFrame({"rule": ["a"] * 2000, "column": "X", "failure_value": "1",
+                          "client_key": "k"})
+    rare = pd.DataFrame({"rule": ["b"] * 3 + ["c"] * 2, "column": "Y", "failure_value": "2",
+                         "client_key": "k"})
+    failures = pd.concat([noisy, rare], ignore_index=True)
+    result = ContractResult(False, 5000, {"a": 2000, "b": 3, "c": 2}, failures,
+                            pd.Index(range(10)))
+    json_path, _ = write_failure_report(result, "x", tmp_path)
+    sample = pd.DataFrame(json.loads(json_path.read_text(encoding="utf-8"))["failures"])
+    assert len(sample) == 500
+    assert sample.rule.value_counts().to_dict() == {"a": 495, "b": 3, "c": 2}
+
+
+def test_html_renders_missing_client_key_as_empty(tmp_path):
+    failures = pd.DataFrame({"rule": ["min_rows"], "column": [None], "failure_value": ["False"],
+                             "client_key": [None]})
+    result = ContractResult(False, 10, {"min_rows": 1}, failures, pd.Index([]))
+    _, html_path = write_failure_report(result, "x", tmp_path)
+    html = html_path.read_text(encoding="utf-8")
+    assert "<td></td></tr>" in html and "None" not in html

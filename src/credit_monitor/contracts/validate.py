@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import html
 import json
+import logging
+import math
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -14,6 +16,8 @@ import pandera as pa
 from credit_monitor.config import Settings
 from credit_monitor.contracts.schema import CONTRACT_VERSION, build_schema
 from credit_monitor.privacy.pseudonymize import KEY_COLUMN
+
+logger = logging.getLogger(__name__)
 
 FAILURE_COLUMNS = ["rule", "column", "failure_value", "client_key"]
 MAX_REPORT_ROWS = 500
@@ -72,7 +76,11 @@ def validate_batch(df: pd.DataFrame, domains: dict) -> ContractResult:
         schema.validate(df, lazy=True)
     except pa.errors.SchemaErrors as exc:
         raw = exc.failure_cases
-    except Exception as exc:  # dado que o Pandera nao soube tratar: o lote ainda e bloqueado
+    except Exception as exc:  # o lote segue bloqueado, mas o erro inesperado nao passa em silencio
+        logger.exception(
+            "Erro inesperado ao validar o contrato de dados (possivel defeito no codigo): %s",
+            type(exc).__name__,
+        )
         raw = pd.DataFrame(
             {
                 "check": ["validation_error"],
@@ -91,6 +99,20 @@ def validate_batch(df: pd.DataFrame, domains: dict) -> ContractResult:
     return ContractResult(False, n_rows, violations, failures, failing_index)
 
 
+def _cell(value: object) -> str:
+    return "" if value is None or pd.isna(value) else str(value)
+
+
+def _balanced_sample(failures: pd.DataFrame, limit: int = MAX_REPORT_ROWS) -> pd.DataFrame:
+    """Ate `limit` falhas, repartidas entre as regras para uma so nao esconder as demais."""
+    if len(failures) <= limit:
+        return failures
+    per_rule = math.ceil(limit / failures["rule"].nunique())
+    first = failures.groupby("rule", sort=False).head(per_rule)
+    rest = failures.drop(first.index)
+    return pd.concat([first, rest.head(limit - len(first))]).sort_index()
+
+
 def _html_report(result: ContractResult, batch_id: str, sample: pd.DataFrame) -> str:
     esc = html.escape
     status = "APROVADO" if result.passed else "BLOQUEADO"
@@ -99,7 +121,7 @@ def _html_report(result: ContractResult, batch_id: str, sample: pd.DataFrame) ->
         for rule, count in sorted(result.violations.items(), key=lambda kv: -kv[1])
     )
     rows = "".join(
-        "<tr>" + "".join(f"<td>{esc(str(row[c]))}</td>" for c in FAILURE_COLUMNS) + "</tr>"
+        "<tr>" + "".join(f"<td>{esc(_cell(row[c]))}</td>" for c in FAILURE_COLUMNS) + "</tr>"
         for _, row in sample.iterrows()
     )
     return f"""<!DOCTYPE html>
@@ -136,7 +158,7 @@ th {{ background: #f0f0f0; }}
 def write_failure_report(result: ContractResult, batch_id: str, out_dir: Path) -> tuple[Path, Path]:
     """Grava `<batch>_failures.json` e `<batch>_failures.html` em `out_dir`."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    sample = result.failures.head(MAX_REPORT_ROWS)
+    sample = _balanced_sample(result.failures)
     payload = {
         "contract_version": CONTRACT_VERSION,
         "batch_id": batch_id,
