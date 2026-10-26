@@ -3,15 +3,29 @@
 from __future__ import annotations
 
 import argparse
+import json
 from collections.abc import Callable
 
+import pyarrow.parquet as pq
+
 from credit_monitor.config import Settings
+from credit_monitor.data.download import DatasetUnavailable, ensure_dataset
+from credit_monitor.data.prepare import run_prepare
 from credit_monitor.privacy.retention import purge
 
 Command = Callable[[Settings, argparse.Namespace], int]
+Configurer = Callable[[argparse.ArgumentParser], None]
 
-# As tarefas seguintes registram aqui seus subcomandos.
+# As tarefas seguintes registram aqui seus subcomandos (via `register`).
 COMMANDS: dict[str, Command] = {}
+CONFIGURERS: dict[str, Configurer] = {}
+
+
+def register(name: str, handler: Command, configure: Configurer | None = None) -> None:
+    """Registra um subcomando; `configure(subparser)` adiciona os argumentos dele."""
+    COMMANDS[name] = handler
+    if configure is not None:
+        CONFIGURERS[name] = configure
 
 
 def _purge(settings: Settings, args: argparse.Namespace) -> int:
@@ -21,7 +35,41 @@ def _purge(settings: Settings, args: argparse.Namespace) -> int:
     return 0
 
 
-COMMANDS["purge"] = _purge
+def _download(settings: Settings, args: argparse.Namespace) -> int:
+    try:
+        path = ensure_dataset(settings)
+    except DatasetUnavailable as exc:
+        print(exc)
+        return 2
+    print(f"Dataset disponível em {path}.")
+    return 0
+
+
+def _prepare(settings: Settings, args: argparse.Namespace) -> int:
+    try:
+        paths = run_prepare(settings, synthetic=args.synthetic, n=args.n)
+    except DatasetUnavailable as exc:
+        print(exc)
+        return 2
+    sizes = {name: pq.ParquetFile(paths[name]).metadata.num_rows
+             for name in ("train", "valid", "test", "pool")}
+    n_raw = json.loads(paths["failures_json"].read_text(encoding="utf-8"))["n_rows"]
+    print(f"Linhas brutas: {n_raw}. Removidas pelo contrato: {n_raw - sum(sizes.values())}.")
+    print("Referência preparada: " + ", ".join(f"{name}={rows}" for name, rows in sizes.items())
+          + f". Arquivos em {paths['train'].parent}.")
+    return 0
+
+
+def _configure_prepare(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--synthetic", action="store_true",
+                        help="usa uma base sintética no mesmo schema, sem o dataset real")
+    parser.add_argument("--n", type=int, default=60_000,
+                        help="linhas da base sintética (padrão: 60000)")
+
+
+register("purge", _purge)
+register("download", _download)
+register("prepare", _prepare, _configure_prepare)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -31,7 +79,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True, metavar="comando")
     for name in COMMANDS:
-        sub.add_parser(name)
+        subparser = sub.add_parser(name)
+        if name in CONFIGURERS:
+            CONFIGURERS[name](subparser)
     return parser
 
 
