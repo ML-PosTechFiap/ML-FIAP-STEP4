@@ -63,8 +63,14 @@ _log = logging.getLogger("credit_monitor.metrics")
 class MetricsPublisher:
     """Acumula gauges num registry proprio e os publica nos grupos `batch_id` e `latest`."""
 
-    def __init__(self, settings: Settings, batch_id: str) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        batch_id: str,
+        logger: logging.Logger | logging.LoggerAdapter | None = None,
+    ) -> None:
         self.settings = settings
+        self._log = logger or _log
         self.batch_id = batch_id
         self.registry = CollectorRegistry()
         self._gauges: dict[str, Gauge] = {}
@@ -93,7 +99,10 @@ class MetricsPublisher:
         """PUT nos grupos `batch_id` e `latest`. Falha de infraestrutura vira False + WARN."""
         url = self.settings.pushgateway_url
         if not url:
-            _log.warning("Pushgateway nao configurado; metricas nao foram publicadas.")
+            self._log.warning(
+                "Pushgateway nao configurado; metricas nao foram publicadas.",
+                extra={"batch_id": self.batch_id},
+            )
             return False
         self.set("credit_batch_info", 1, batch_id=self.batch_id)
         try:
@@ -106,6 +115,11 @@ class MetricsPublisher:
                     timeout=self.settings.http_timeout,
                 )
         except Exception as exc:  # metricas nunca derrubam o pipeline
-            _log.warning("Falha ao publicar no Pushgateway (%s): %s", type(exc).__name__, exc)
+            self._log.warning(
+                "Falha ao publicar no Pushgateway (%s): %s",
+                type(exc).__name__,
+                exc,
+                extra={"batch_id": self.batch_id},
+            )
             return False
         return True

@@ -1,5 +1,7 @@
 import json
+import os
 import time
+import types
 
 import pytest
 
@@ -64,3 +66,90 @@ def test_dead_infra_does_not_hang(tmp_path):
 
 def test_catalog_has_no_batch_label():
     assert all("batch" not in labels for _, labels in METRIC_CATALOG.values())
+
+
+class _Ok:
+    def raise_for_status(self):
+        pass
+
+
+def _fake_mlflow(monkeypatch, *, fail_on):
+    """Troca as chamadas do mlflow por fakes; `fail_on` e o nome da chamada que levanta."""
+    import mlflow
+
+    calls = []
+
+    def make(name, result=None):
+        def fn(*args, **kwargs):
+            calls.append(name)
+            if name == fail_on:
+                raise RuntimeError("servidor caiu")
+            return result
+
+        return fn
+
+    run = types.SimpleNamespace(info=types.SimpleNamespace(run_id="abc"))
+    for name in ("set_tracking_uri", "set_experiment", "log_metrics", "end_run"):
+        monkeypatch.setattr(mlflow, name, make(name))
+    monkeypatch.setattr(mlflow, "start_run", make("start_run", run))
+    return calls
+
+
+def test_tracker_bounds_mlflow_client_timeout(tmp_path, monkeypatch):
+    monkeypatch.setenv("MLFLOW_HTTP_REQUEST_TIMEOUT", "999")
+    monkeypatch.setenv("MLFLOW_HTTP_REQUEST_MAX_RETRIES", "999")
+    monkeypatch.setattr("requests.get", lambda *a, **k: _Ok())
+    Tracker(_settings(tmp_path, mlflow_uri="http://mlflow:5000", http_timeout=2.0))
+    assert os.environ["MLFLOW_HTTP_REQUEST_TIMEOUT"] == "2"
+    assert os.environ["MLFLOW_HTTP_REQUEST_MAX_RETRIES"] == "0"
+
+
+def test_tracker_disabled_mid_run_skips_end_run(tmp_path, monkeypatch):
+    monkeypatch.setattr("requests.get", lambda *a, **k: _Ok())
+    calls = _fake_mlflow(monkeypatch, fail_on="log_metrics")
+    t = Tracker(_settings(tmp_path, mlflow_uri="http://mlflow:5000"))
+    assert t.enabled is True
+    with t.run("exp", "run", {}) as run_id:
+        assert run_id == "abc" and t.active_run_id == "abc"
+        t.log_metrics({"auc": 0.7})
+        assert t.enabled is False
+        t.log_metrics({"auc": 0.8})  # no-op: nao tenta de novo
+    assert calls.count("log_metrics") == 1
+    assert "end_run" not in calls and t.active_run_id is None
+
+
+def test_tracker_healthy_run_calls_end_run(tmp_path, monkeypatch):
+    monkeypatch.setattr("requests.get", lambda *a, **k: _Ok())
+    calls = _fake_mlflow(monkeypatch, fail_on=None)
+    t = Tracker(_settings(tmp_path, mlflow_uri="http://mlflow:5000"))
+    with t.run("exp", "run", {}):
+        t.log_metrics({"auc": 0.7})
+    assert calls[-1] == "end_run" and t.enabled is True
+
+
+def test_tracker_setup_failure_disables_without_end_run(tmp_path, monkeypatch):
+    monkeypatch.setattr("requests.get", lambda *a, **k: _Ok())
+    calls = _fake_mlflow(monkeypatch, fail_on="set_experiment")
+    t = Tracker(_settings(tmp_path, mlflow_uri="http://mlflow:5000"))
+    with t.run("exp", "run", {}) as run_id:
+        assert run_id is None
+    assert t.enabled is False and "end_run" not in calls
+
+
+def test_warnings_reach_json_log(tmp_path, monkeypatch):
+    def boom(*a, **k):
+        raise OSError("fora")
+
+    monkeypatch.setattr("requests.get", boom)
+    s = _settings(tmp_path, mlflow_uri="http://mlflow:5000")  # sem pushgateway
+    log = get_logger(s, "r9")
+    assert MetricsPublisher(s, "07", logger=log).push() is False
+    assert Tracker(s, logger=log).enabled is False
+    lines = [
+        json.loads(x)
+        for x in (tmp_path / "reports/logs/pipeline.jsonl").read_text().splitlines()
+    ]
+    warns = [x for x in lines if x["level"] == "WARNING"]
+    assert len(warns) == 2 and all(x["run_id"] == "r9" for x in warns)
+    assert any("Pushgateway" in x["message"] and x["batch_id"] == "07" for x in warns)
+    assert any("MLflow" in x["message"] for x in warns)

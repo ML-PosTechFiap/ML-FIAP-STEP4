@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import math
+import os
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -16,10 +18,17 @@ _log = logging.getLogger("credit_monitor.tracking")
 
 
 class Tracker:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(
+        self, settings: Settings, logger: logging.Logger | logging.LoggerAdapter | None = None
+    ) -> None:
         self.settings = settings
+        self._log = logger or _log
         self.uri = settings.mlflow_uri.rstrip("/") if settings.mlflow_uri else None
         self.active_run_id: str | None = None
+        if self.uri:
+            # O cliente REST do MLflow nao usa o nosso timeout: sem isto o padrao e 120 s x 7 tentativas.
+            os.environ["MLFLOW_HTTP_REQUEST_TIMEOUT"] = str(max(1, math.ceil(settings.http_timeout)))
+            os.environ["MLFLOW_HTTP_REQUEST_MAX_RETRIES"] = "0"
         self.enabled = self._probe()
 
     def _probe(self) -> bool:
@@ -29,13 +38,13 @@ class Tracker:
             response = requests.get(f"{self.uri}/health", timeout=self.settings.http_timeout)
             response.raise_for_status()
         except Exception as exc:
-            _log.warning("MLflow indisponivel (%s); rastreamento desativado.", type(exc).__name__)
+            self._log.warning("MLflow indisponivel (%s); rastreamento desativado.", type(exc).__name__)
             return False
         return True
 
     def _disable(self, exc: Exception) -> None:
         self.enabled = False
-        _log.warning("Falha no MLflow (%s); rastreamento desativado.", type(exc).__name__)
+        self._log.warning("Falha no MLflow (%s); rastreamento desativado.", type(exc).__name__)
 
     @contextmanager
     def run(
@@ -64,10 +73,11 @@ class Tracker:
             raise
         finally:
             self.active_run_id = None
-            try:
-                mlflow.end_run(status=status)
-            except Exception as exc:
-                self._disable(exc)
+            if self.enabled:  # desabilitado no meio do run: nao bater no servidor morto
+                try:
+                    mlflow.end_run(status=status)
+                except Exception as exc:
+                    self._disable(exc)
 
     def _call(self, fn_name: str, *args: Any) -> None:
         if not self.enabled or self.active_run_id is None:
