@@ -127,6 +127,57 @@ def test_tracker_healthy_run_calls_end_run(tmp_path, monkeypatch):
     assert calls[-1] == "end_run" and t.enabled is True
 
 
+def _fake_model_registry(monkeypatch, *, fail_on):
+    """Fakes de `mlflow.sklearn.log_model` e `MlflowClient`; `fail_on` e a chamada que levanta."""
+    import mlflow
+    import mlflow.sklearn
+
+    calls = []
+
+    def log_model(model, artifact_path, registered_model_name=None, **kw):
+        calls.append(("log_model", artifact_path, registered_model_name))
+        if fail_on == "log_model":
+            raise RuntimeError("servidor caiu")
+        return types.SimpleNamespace(registered_model_version="7")
+
+    class FakeClient:
+        def set_registered_model_alias(self, name, alias, version):
+            calls.append(("alias", name, alias, version))
+            if fail_on == "alias":
+                raise RuntimeError("servidor caiu")
+
+    monkeypatch.setattr(mlflow.sklearn, "log_model", log_model)
+    monkeypatch.setattr(mlflow, "MlflowClient", FakeClient)
+    return calls
+
+
+def test_tracker_log_model_registers_and_sets_alias(tmp_path, monkeypatch):
+    monkeypatch.setattr("requests.get", lambda *a, **k: _Ok())
+    _fake_mlflow(monkeypatch, fail_on=None)
+    calls = _fake_model_registry(monkeypatch, fail_on=None)
+    t = Tracker(_settings(tmp_path, mlflow_uri="http://mlflow:5000"))
+    with t.run("exp", "run", {}):
+        assert t.log_model(object(), "credit-scoring") == "7"
+    assert calls == [("log_model", "model", "credit-scoring"),
+                     ("alias", "credit-scoring", "production", "7")]
+    assert t.enabled is True
+
+
+@pytest.mark.parametrize("fail_on", ["log_model", "alias"])
+def test_tracker_log_model_failure_disables(tmp_path, monkeypatch, fail_on):
+    monkeypatch.setattr("requests.get", lambda *a, **k: _Ok())
+    _fake_mlflow(monkeypatch, fail_on=None)
+    _fake_model_registry(monkeypatch, fail_on=fail_on)
+    t = Tracker(_settings(tmp_path, mlflow_uri="http://mlflow:5000"))
+    with t.run("exp", "run", {}):
+        assert t.log_model(object(), "credit-scoring") is None
+        assert t.enabled is False
+
+
+def test_tracker_log_model_noop_when_disabled(tmp_path):
+    assert Tracker(_settings(tmp_path)).log_model(object(), "credit-scoring") is None
+
+
 def test_tracker_setup_failure_disables_without_end_run(tmp_path, monkeypatch):
     monkeypatch.setattr("requests.get", lambda *a, **k: _Ok())
     calls = _fake_mlflow(monkeypatch, fail_on="set_experiment")

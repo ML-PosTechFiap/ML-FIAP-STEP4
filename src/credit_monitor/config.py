@@ -100,6 +100,26 @@ NUMERIC_FEATURES: list[str] = [
 
 MODEL_FEATURES: list[str] = NUMERIC_FEATURES + CATEGORICAL_FEATURES
 
+# --- Modelo -------------------------------------------------------------------------
+
+XGB_PARAMS: dict = dict(
+    n_estimators=600,
+    learning_rate=0.05,
+    max_depth=5,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    eval_metric="auc",
+    early_stopping_rounds=50,
+    random_state=SEED,
+)
+# (inicio, fim exclusivo, rotulo) em anos completos, para a auditoria de vies.
+AGE_BANDS: list[tuple[int, int, str]] = [
+    (0, 30, "<30"),
+    (30, 45, "30-45"),
+    (45, 60, "45-60"),
+    (60, 200, "60+"),
+]
+
 _INTEGER_COLUMNS = {"SK_ID_CURR", "TARGET"}
 _CATEGORICAL_COLUMNS = set(CATEGORICAL_FEATURES) | {"CODE_GENDER"}
 RAW_DTYPES: dict[str, str] = {

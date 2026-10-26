@@ -11,6 +11,7 @@ import pyarrow.parquet as pq
 from credit_monitor.config import Settings
 from credit_monitor.data.download import DatasetUnavailable, ensure_dataset
 from credit_monitor.data.prepare import run_prepare
+from credit_monitor.model.train import run_train
 from credit_monitor.privacy.retention import purge
 
 Command = Callable[[Settings, argparse.Namespace], int]
@@ -67,9 +68,22 @@ def _configure_prepare(parser: argparse.ArgumentParser) -> None:
                         help="linhas da base sintética (padrão: 60000)")
 
 
+def _train(settings: Settings, args: argparse.Namespace) -> int:
+    try:
+        meta = run_train(settings)
+    except RuntimeError as exc:
+        print(exc)
+        return 2
+    m = meta["reference_metrics"]
+    print(f"Modelo treinado: AUC={m['auc']:.4f}, KS={m['ks']:.4f}, corte={meta['cutoff']:.4f}. "
+          f"Artefatos em {settings.models_dir}.")
+    return 0
+
+
 register("purge", _purge)
 register("download", _download)
 register("prepare", _prepare, _configure_prepare)
+register("train", _train)
 
 
 def build_parser() -> argparse.ArgumentParser:

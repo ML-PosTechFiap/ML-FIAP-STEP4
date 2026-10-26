@@ -97,3 +97,26 @@ class Tracker:
 
     def log_artifact(self, path: Path) -> None:
         self._call("log_artifact", str(path))
+
+    def log_model(self, pipeline: Any, registered_name: str) -> str | None:
+        """Registra o modelo no run ativo e aponta o alias `production` para a nova versao.
+
+        Devolve a versao (str) ou `None` se desabilitado ou se o MLflow falhar.
+        """
+        if not self.enabled or self.active_run_id is None:
+            return None
+        try:
+            import mlflow
+            import mlflow.sklearn
+
+            info = mlflow.sklearn.log_model(
+                pipeline, "model", registered_model_name=registered_name
+            )
+            version = str(info.registered_model_version)
+            mlflow.MlflowClient().set_registered_model_alias(
+                registered_name, "production", version
+            )
+        except Exception as exc:
+            self._disable(exc)
+            return None
+        return version
