@@ -138,6 +138,36 @@ def _configure_simulate_all(parser: argparse.ArgumentParser) -> None:
                         help="pausa entre lotes, em segundos (ex.: 30 ou 30s)")
 
 
+def _causal(settings: Settings, args: argparse.Namespace) -> int:
+    from credit_monitor.drift.causal import run_causal
+    from credit_monitor.model.predict import ModelNotTrained
+    from credit_monitor.pipeline import BatchNotFound
+
+    try:
+        path = run_causal(settings, args.batch)
+    except (BatchNotFound, ModelNotTrained) as exc:
+        print(exc)
+        return 2
+    report = json.loads(path.with_suffix(".json").read_text(encoding="utf-8"))
+    d = report["decomposition"]
+    print(f"Lote {args.batch}: AUC {d['auc_reference']:.3f} na referência, "
+          f"{d['auc_covariate_only']:.3f} só com a mudança em X e {d['auc_total']:.3f} no efeito "
+          f"total. Queda por mudança nas covariáveis: {d['drop_covariate']:.3f}; "
+          f"por concept drift: {d['drop_concept']:.3f}.")
+    top = [r for r in report["ablation"] if r["psi_recovery"] is not None][:3]
+    if top:
+        print("Features que mais recuperam o PSI do score ao voltar à referência: "
+              + ", ".join(f"{r['feature']} ({r['psi_recovery']:.0%})" for r in top) + ".")
+    else:
+        print("Nenhuma feature com drift detectado: a ablação ficou vazia.")
+    print(f"Relatório em {path}.")
+    return 0
+
+
+def _configure_causal(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--batch", default="06", help="identificador do lote (padrão: 06)")
+
+
 def _reset_metrics(settings: Settings, args: argparse.Namespace) -> int:
     from credit_monitor.config import SIMULATION_ORDER
     from credit_monitor.pipeline import reset_groups
@@ -162,6 +192,7 @@ register("prepare", _prepare, _configure_prepare)
 register("train", _train)
 register("monitor", _monitor, _configure_monitor)
 register("simulate-all", _simulate_all, _configure_simulate_all)
+register("causal", _causal, _configure_causal)
 register("reset-metrics", _reset_metrics)
 
 

@@ -61,7 +61,7 @@ def performance(
     }
 
 
-def _calibration_factor(scored: pd.DataFrame) -> float | None:
+def calibration_factor(scored: pd.DataFrame) -> float | None:
     """Default observado / PD media prevista de um frame com `TARGET` e `score`."""
     if "TARGET" not in scored.columns or not scored["TARGET"].notna().any():
         return None
@@ -177,12 +177,12 @@ def evidently_reports(
     return {"paths": paths, "psi": psi_by_column}
 
 
-def _json_safe(value):
+def json_safe(value):
     """Converte numpy/NaN/inf em tipos JSON validos (nao finitos viram `None`)."""
     if isinstance(value, dict):
-        return {str(k): _json_safe(v) for k, v in value.items()}
+        return {str(k): json_safe(v) for k, v in value.items()}
     if isinstance(value, (list, tuple)):
-        return [_json_safe(v) for v in value]
+        return [json_safe(v) for v in value]
     if isinstance(value, np.generic):
         value = value.item()
     if isinstance(value, float) and not math.isfinite(value):
@@ -231,7 +231,7 @@ def analyze_batch(
                 cur_scored["TARGET"].to_numpy(),
                 cur_scored["score"].to_numpy(),
                 cutoff,
-                reference_factor=_calibration_factor(ref_scored),
+                reference_factor=calibration_factor(ref_scored),
             )
             if labeled
             else None
@@ -245,7 +245,7 @@ def analyze_batch(
     summary["recommendation"] = recommend(summary, reference_auc)
     summary["recommendation_reasons"] = retrain + investigate
 
-    summary = _json_safe(summary)
+    summary = json_safe(summary)
     path = out_dir / f"{batch_id}_summary.json"
     path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     summary["summary_path"] = str(path)
