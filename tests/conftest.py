@@ -24,3 +24,12 @@ def prepared(tmp_path_factory):
     s = _settings(root, models_dir=root / "models")
     run_prepare(s, synthetic=True, n=60_000)
     return s
+
+
+@pytest.fixture(scope="session")
+def trained(prepared):
+    """Settings de `prepared` apos `run_train`: models/ e test_scored.parquet gravados."""
+    from credit_monitor.model.train import run_train
+
+    run_train(prepared)
+    return prepared

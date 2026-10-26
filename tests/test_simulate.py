@@ -67,7 +67,7 @@ def test_manifest_content(prepared):
     assert m["n_rows"] == len(pd.read_parquet(prepared.data_dir / "batches/06/batch.parquet"))
     assert m["drifted_features"] == sorted(m["drifted_features"])
     assert set(m["drifted_features"]) <= set(config.MODEL_FEATURES)
-    assert {"AGE_YEARS", "EXT_SOURCE_1", "EXT_SOURCE_2", "CREDIT_TERM"} <= set(m["drifted_features"])
+    assert {"AGE_YEARS", "EXT_SOURCE_2", "CREDIT_TERM", "YEARS_EMPLOYED"} <= set(m["drifted_features"])
     assert "expected_rules" not in m
     assert _manifest(prepared, "03-dirty")["expected_rules"] == [
         "income_not_null", "age_range", "client_key_unique",
@@ -151,9 +151,15 @@ def test_apply_drift_rules_on_small_frame():
     assert (low["DAYS_EMPLOYED"] == df["DAYS_EMPLOYED"]).all()
 
 
+RATIO_FEATURES = ("CREDIT_INCOME_RATIO", "ANNUITY_INCOME_RATIO")
+
+
 def test_drifted_features_mapping():
     assert config.drifted_features(config.DRIFT_SCHEDULE["01"]) == []
     f03 = config.drifted_features(config.DRIFT_SCHEDULE["03"])
-    assert "YEARS_EMPLOYED" in f03 and "CREDIT_TERM" in f03 and "AGE_YEARS" not in f03
-    same = config.DriftParams(income_infl=0.1, credit_infl=0.1, annuity_infl=0.1)
-    assert "CREDIT_TERM" not in config.drifted_features(same)
+    assert "CREDIT_TERM" in f03 and "AGE_YEARS" not in f03 and "YEARS_EMPLOYED" not in f03
+    f06 = config.drifted_features(config.DRIFT_SCHEDULE["06"])
+    assert {"YEARS_EMPLOYED", "AGE_YEARS", "EXT_SOURCE_2", "NAME_INCOME_TYPE"} <= set(f06)
+    same = config.DriftParams(income_infl=0.3, credit_infl=0.3, annuity_infl=0.3)
+    f_same = config.drifted_features(same)
+    assert "AMT_CREDIT" in f_same and not {"CREDIT_TERM", *RATIO_FEATURES} & set(f_same)

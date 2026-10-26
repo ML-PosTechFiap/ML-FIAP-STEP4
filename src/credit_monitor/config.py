@@ -188,23 +188,35 @@ DRIFT_SCHEDULE: dict[str, DriftParams] = {
     "06": DriftParams(0.12, 0.25, 0.35, 0.30, 0.20, 3.0, 0.30, 0.15, 0.25),
 }
 
-# Features do modelo em que cada parametro injeta drift (alimenta o `manifest.json`).
-# Cada regra: (parametro esta ativo?, features afetadas). Facil de editar: a Tarefa 9
-# confere a revocacao da deteccao contra esta lista.
-_RATIOS = ["CREDIT_INCOME_RATIO", "ANNUITY_INCOME_RATIO"]
+# Features do modelo em que se espera drift detectavel, por parametro (alimenta o
+# `manifest.json`). Cada regra: (parametro esta ativo?, features afetadas). Os minimos abaixo
+# foram calibrados contra a base sintetica (referencia ~5,4 mil linhas, lotes ~4 mil): mudancas
+# menores que eles ficam abaixo da regra de drift (PSI >= 0,20 ou KS D > 0,10), entao nao sao
+# prometidas. Com os dados reais (lotes de 20 mil linhas) a deteccao so melhora.
+
+def _net_shift(p: DriftParams, numerator: float) -> float:
+    """Deslocamento relativo de `numerador / renda` quando ambos sao inflacionados."""
+    return abs((1 + numerator) / (1 + p.income_infl) - 1)
+
+
 DRIFT_EFFECTS: list[tuple[Callable[[DriftParams], bool], list[str]]] = [
-    (lambda p: p.income_infl != 0, ["AMT_INCOME_TOTAL", *_RATIOS]),
-    (lambda p: p.credit_infl != 0, ["AMT_CREDIT", "AMT_GOODS_PRICE", *_RATIOS]),
-    (lambda p: p.annuity_infl != 0, ["AMT_ANNUITY", *_RATIOS]),
+    (lambda p: p.income_infl >= 0.15, ["AMT_INCOME_TOTAL"]),
+    (lambda p: p.credit_infl >= 0.20, ["AMT_CREDIT", "AMT_GOODS_PRICE"]),
+    (lambda p: p.annuity_infl >= 0.25, ["AMT_ANNUITY"]),
+    # as razoes so se deslocam pela diferenca liquida entre as inflacoes
+    (lambda p: _net_shift(p, p.credit_infl) >= 0.25, ["CREDIT_INCOME_RATIO"]),
+    (lambda p: _net_shift(p, p.annuity_infl) >= 0.25, ["ANNUITY_INCOME_RATIO"]),
     # credito / anuidade so se desloca quando as inflacoes diferem
-    (lambda p: p.credit_infl != p.annuity_infl, ["CREDIT_TERM"]),
+    (lambda p: round(abs(p.credit_infl - p.annuity_infl), 6) >= 0.04, ["CREDIT_TERM"]),
+    (lambda p: (p.unemployed_target or 0) >= 0.25, ["NAME_INCOME_TYPE"]),
+    (lambda p: (p.unemployed_target or 0) >= 0.28, ["IS_UNEMPLOYED_OR_PENSIONER"]),
     (
-        lambda p: p.unemployed_target is not None or p.employed_shrink > 0,
-        ["YEARS_EMPLOYED", "IS_UNEMPLOYED_OR_PENSIONER", "NAME_INCOME_TYPE"],
+        lambda p: p.employed_shrink >= 0.20 or (p.unemployed_target or 0) >= 0.30,
+        ["YEARS_EMPLOYED"],
     ),
-    (lambda p: p.young_weight > 0, ["AGE_YEARS"]),
-    (lambda p: p.ext1_extra_null > 0, ["EXT_SOURCE_1"]),
-    (lambda p: p.ext23_shrink > 0, ["EXT_SOURCE_2", "EXT_SOURCE_3"]),
+    (lambda p: p.young_weight >= 2.0, ["AGE_YEARS"]),
+    (lambda p: p.ext1_extra_null >= 0.50, ["EXT_SOURCE_1"]),
+    (lambda p: p.ext23_shrink >= 0.10, ["EXT_SOURCE_2", "EXT_SOURCE_3"]),
 ]
 
 

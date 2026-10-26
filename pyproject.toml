@@ -35,6 +35,12 @@ where = ["src"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+# Ruido de terceiros (Evidently 0.7 e litestar, que ele importa); nada do nosso codigo.
+filterwarnings = [
+    "ignore:numpy.core is deprecated:DeprecationWarning",
+    "ignore:Call to deprecated function 'Dependency':Warning",
+    "ignore:Use of deprecated class 'DependencyKwarg':Warning",
+]
 
 [tool.ruff]
 line-length = 100
