@@ -16,6 +16,7 @@ from credit_monitor.contracts.validate import (
     write_failure_report,
 )
 from credit_monitor.data.download import ensure_dataset
+from credit_monitor.data.simulate import build_all_batches
 from credit_monitor.data.synthetic import make_synthetic_application
 from credit_monitor.privacy.pseudonymize import pseudonymize
 
@@ -65,7 +66,8 @@ def split_reference(clean: pd.DataFrame, seed: int) -> dict[str, pd.DataFrame]:
 
 
 def run_prepare(settings: Settings, synthetic: bool, n: int) -> dict[str, Path]:
-    """Grava a referência pseudonimizada, o pool bruto, os domínios e o relatório do contrato."""
+    """Grava a referência pseudonimizada, o pool bruto, os domínios, o relatório do contrato
+    e os lotes mensais simulados (`data/batches/<id>/`)."""
     if synthetic:
         raw = make_synthetic_application(n)
     else:
@@ -91,4 +93,5 @@ def run_prepare(settings: Settings, synthetic: bool, n: int) -> dict[str, Path]:
     paths["failures_json"], paths["failures_html"] = write_failure_report(
         result, "raw_reference", settings.reports_dir / "contracts"
     )
+    build_all_batches(settings, parts["pool"], parts["train"], SEED)
     return paths

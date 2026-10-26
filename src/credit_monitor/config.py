@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -126,3 +127,68 @@ PRED_PSI_ALERT = 0.20
 AUC_DROP_ALERT = 0.05
 CALIBRATION_ALERT = 1.3
 DISPARATE_IMPACT_MIN = 0.8
+
+
+# --- Cenario de drift (spec 6.1) ---------------------------------------------------
+
+
+@dataclass(frozen=True)
+class DriftParams:
+    """Parametros de drift de um lote mensal. Zero (ou `None`) = sem alteracao.
+
+    `credit_infl` vale tambem para `AMT_GOODS_PRICE`. `employed_shrink` encolhe o
+    `DAYS_EMPLOYED` dos empregados restantes. `young_weight` pondera a amostragem por
+    `1 + young_weight * (idade < 30)`. `concept_flip` e a fracao dos `TARGET == 0` do
+    segmento "espremido" virada para 1.
+    """
+
+    income_infl: float = 0.0
+    credit_infl: float = 0.0
+    annuity_infl: float = 0.0
+    unemployed_target: float | None = None
+    employed_shrink: float = 0.0
+    young_weight: float = 0.0
+    ext1_extra_null: float = 0.0
+    ext23_shrink: float = 0.0
+    concept_flip: float = 0.0
+
+
+DRIFT_SCHEDULE: dict[str, DriftParams] = {
+    "01": DriftParams(),
+    "02": DriftParams(income_infl=0.02, credit_infl=0.04, annuity_infl=0.06),
+    "03": DriftParams(
+        income_infl=0.05,
+        credit_infl=0.10,
+        annuity_infl=0.14,
+        unemployed_target=0.22,
+        employed_shrink=0.05,
+    ),
+    "04": DriftParams(0.08, 0.16, 0.22, 0.25, 0.10, 1.0, 0.10, 0.05, 0.10),
+    "05": DriftParams(0.10, 0.20, 0.28, 0.28, 0.15, 2.0, 0.20, 0.10, 0.18),
+    "06": DriftParams(0.12, 0.25, 0.35, 0.30, 0.20, 3.0, 0.30, 0.15, 0.25),
+}
+
+# Features do modelo em que cada parametro injeta drift (alimenta o `manifest.json`).
+# Cada regra: (parametro esta ativo?, features afetadas). Facil de editar: a Tarefa 9
+# confere a revocacao da deteccao contra esta lista.
+_RATIOS = ["CREDIT_INCOME_RATIO", "ANNUITY_INCOME_RATIO"]
+DRIFT_EFFECTS: list[tuple[Callable[[DriftParams], bool], list[str]]] = [
+    (lambda p: p.income_infl != 0, ["AMT_INCOME_TOTAL", *_RATIOS]),
+    (lambda p: p.credit_infl != 0, ["AMT_CREDIT", "AMT_GOODS_PRICE", *_RATIOS]),
+    (lambda p: p.annuity_infl != 0, ["AMT_ANNUITY", *_RATIOS]),
+    # credito / anuidade so se desloca quando as inflacoes diferem
+    (lambda p: p.credit_infl != p.annuity_infl, ["CREDIT_TERM"]),
+    (
+        lambda p: p.unemployed_target is not None or p.employed_shrink > 0,
+        ["YEARS_EMPLOYED", "IS_UNEMPLOYED_OR_PENSIONER", "NAME_INCOME_TYPE"],
+    ),
+    (lambda p: p.young_weight > 0, ["AGE_YEARS"]),
+    (lambda p: p.ext1_extra_null > 0, ["EXT_SOURCE_1"]),
+    (lambda p: p.ext23_shrink > 0, ["EXT_SOURCE_2", "EXT_SOURCE_3"]),
+]
+
+
+def drifted_features(params: DriftParams) -> list[str]:
+    """`MODEL_FEATURES` esperadas em drift para os parametros dados (ordenadas)."""
+    found = {f for active, features in DRIFT_EFFECTS if active(params) for f in features}
+    return sorted(found)
