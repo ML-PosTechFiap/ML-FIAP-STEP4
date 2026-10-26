@@ -213,7 +213,7 @@ def test_unexpected_error_is_logged_and_blocks(valid, monkeypatch, caplog):
     with caplog.at_level(logging.ERROR, logger=validate_mod.logger.name):
         r = validate_batch(df, dom)
     assert not r.passed and r.violations == {"validation_error": 1}
-    assert "KeyError" in r.failures.failure_value.iloc[0]
+    assert r.failures.failure_value.tolist() == ["KeyError"]  # sem a mensagem (pode ter dados)
     records = [x for x in caplog.records if x.levelno == logging.ERROR]
     assert records and records[0].exc_info is not None
 
@@ -239,3 +239,14 @@ def test_html_renders_missing_client_key_as_empty(tmp_path):
     _, html_path = write_failure_report(result, "x", tmp_path)
     html = html_path.read_text(encoding="utf-8")
     assert "<td></td></tr>" in html and "None" not in html
+
+
+def test_failure_sample_cap_holds_when_rules_do_not_divide_limit(tmp_path):
+    failures = pd.DataFrame({"rule": ["a", "b", "c"] * 1000, "column": "X",
+                             "failure_value": "1", "client_key": "k"})
+    result = ContractResult(False, 5000, {"a": 1000, "b": 1000, "c": 1000}, failures,
+                            pd.Index(range(10)))
+    json_path, _ = write_failure_report(result, "x", tmp_path)
+    sample = pd.DataFrame(json.loads(json_path.read_text(encoding="utf-8"))["failures"])
+    assert len(sample) == 500
+    assert set(sample.rule) == {"a", "b", "c"} and sample.rule.value_counts().min() >= 166

@@ -5,7 +5,6 @@ from __future__ import annotations
 import html
 import json
 import logging
-import math
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -85,7 +84,7 @@ def validate_batch(df: pd.DataFrame, domains: dict) -> ContractResult:
             {
                 "check": ["validation_error"],
                 "column": [None],
-                "failure_case": [f"{type(exc).__name__}: {exc}"],
+                "failure_case": [type(exc).__name__],  # a mensagem pode citar dados: so no log
                 "index": [None],
             }
         )
@@ -104,13 +103,12 @@ def _cell(value: object) -> str:
 
 
 def _balanced_sample(failures: pd.DataFrame, limit: int = MAX_REPORT_ROWS) -> pd.DataFrame:
-    """Ate `limit` falhas, repartidas entre as regras para uma so nao esconder as demais."""
+    """Ate `limit` falhas em rodizio entre as regras, para uma so nao esconder as demais."""
     if len(failures) <= limit:
         return failures
-    per_rule = math.ceil(limit / failures["rule"].nunique())
-    first = failures.groupby("rule", sort=False).head(per_rule)
-    rest = failures.drop(first.index)
-    return pd.concat([first, rest.head(limit - len(first))]).sort_index()
+    turn = failures.groupby("rule", sort=False).cumcount()  # 0 = 1a falha da regra, etc.
+    picked = turn.sort_values(kind="stable").index[:limit]
+    return failures.loc[failures.index.isin(picked)]
 
 
 def _html_report(result: ContractResult, batch_id: str, sample: pd.DataFrame) -> str:
