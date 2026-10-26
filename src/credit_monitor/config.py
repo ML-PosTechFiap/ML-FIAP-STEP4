@@ -188,11 +188,37 @@ DRIFT_SCHEDULE: dict[str, DriftParams] = {
     "06": DriftParams(0.12, 0.25, 0.35, 0.30, 0.20, 3.0, 0.30, 0.15, 0.25),
 }
 
-# Features do modelo em que se espera drift detectavel, por parametro (alimenta o
-# `manifest.json`). Cada regra: (parametro esta ativo?, features afetadas). Os minimos abaixo
-# foram calibrados contra a base sintetica (referencia ~5,4 mil linhas, lotes ~4 mil): mudancas
-# menores que eles ficam abaixo da regra de drift (PSI >= 0,20 ou KS D > 0,10), entao nao sao
-# prometidas. Com os dados reais (lotes de 20 mil linhas) a deteccao so melhora.
+# Verdade-base do manifest (spec 6.1): toda feature que os parametros ativos tocam, sem
+# considerar se a mudanca e grande o bastante para ser detectada.
+_RATIOS = ["CREDIT_INCOME_RATIO", "ANNUITY_INCOME_RATIO"]
+INJECTED_EFFECTS: list[tuple[Callable[[DriftParams], bool], list[str]]] = [
+    (lambda p: p.income_infl != 0, ["AMT_INCOME_TOTAL", *_RATIOS]),
+    (lambda p: p.credit_infl != 0, ["AMT_CREDIT", "AMT_GOODS_PRICE", *_RATIOS]),
+    (lambda p: p.annuity_infl != 0, ["AMT_ANNUITY", *_RATIOS]),
+    # credito / anuidade so se desloca quando as inflacoes diferem
+    (lambda p: p.credit_infl != p.annuity_infl, ["CREDIT_TERM"]),
+    (
+        lambda p: p.unemployed_target is not None or p.employed_shrink > 0,
+        ["YEARS_EMPLOYED", "IS_UNEMPLOYED_OR_PENSIONER", "NAME_INCOME_TYPE"],
+    ),
+    (lambda p: p.young_weight > 0, ["AGE_YEARS"]),
+    (lambda p: p.ext1_extra_null > 0, ["EXT_SOURCE_1"]),
+    (lambda p: p.ext23_shrink > 0, ["EXT_SOURCE_2", "EXT_SOURCE_3"]),
+]
+
+
+def injected_features(params: DriftParams) -> list[str]:
+    """`MODEL_FEATURES` que os parametros dados alteram (ordenadas): a verdade-base."""
+    found = {f for active, features in INJECTED_EFFECTS if active(params) for f in features}
+    return sorted(found)
+
+
+# Subconjunto de `injected_features` em que se espera drift detectavel (a Tarefa 9 confere a
+# revocacao da deteccao contra esta lista). Cada regra: (parametro esta ativo?, features
+# afetadas). Os minimos foram calibrados contra a base sintetica (referencia ~5,4 mil linhas,
+# lotes ~4 mil): mudancas menores ficam abaixo da regra de drift (PSI >= 0,20 ou KS D > 0,10),
+# entao nao sao prometidas. Com os dados reais (lotes de 20 mil linhas) a deteccao so melhora.
+
 
 def _net_shift(p: DriftParams, numerator: float) -> float:
     """Deslocamento relativo de `numerador / renda` quando ambos sao inflacionados."""
@@ -221,6 +247,6 @@ DRIFT_EFFECTS: list[tuple[Callable[[DriftParams], bool], list[str]]] = [
 
 
 def drifted_features(params: DriftParams) -> list[str]:
-    """`MODEL_FEATURES` esperadas em drift para os parametros dados (ordenadas)."""
+    """Subconjunto de `injected_features` esperado como drift detectavel (ordenado)."""
     found = {f for active, features in DRIFT_EFFECTS if active(params) for f in features}
     return sorted(found)

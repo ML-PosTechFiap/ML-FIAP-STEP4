@@ -27,21 +27,48 @@ from credit_monitor.model.features import model_matrix
 from credit_monitor.model.train import ks_statistic
 
 
-def performance(y_true: np.ndarray, score: np.ndarray, cutoff: float) -> dict:
-    """Metricas com rotulo. `auc`/`ks` sao `None` com uma so classe; aprovado = `score < cutoff`."""
+def performance(
+    y_true: np.ndarray,
+    score: np.ndarray,
+    cutoff: float,
+    reference_factor: float | None = None,
+) -> dict:
+    """Metricas com rotulo. `auc`/`ks` sao `None` com uma so classe; aprovado = `score < cutoff`.
+
+    `calibration_ratio_raw` = default observado / PD media prevista. O modelo usa
+    `scale_pos_weight`, entao o score nao e uma probabilidade calibrada e o valor bruto ja
+    nasce longe de 1. Por isso, com `reference_factor` (o mesmo quociente na referencia),
+    `calibration_ratio` e relativo a ela: `bruto / reference_factor` (1,0 = calibracao igual
+    a da referencia). Sem o fator, `calibration_ratio` e o proprio valor bruto.
+    """
     y = np.asarray(y_true)
     s = np.asarray(score, dtype="float64")
     single_class = len(np.unique(y)) < 2
     observed = float(y.mean())
     predicted = float(s.mean())
+    raw = observed / predicted if predicted > 0 else None
+    relative = raw
+    if raw is not None and reference_factor:
+        relative = raw / reference_factor
     return {
         "auc": None if single_class else float(roc_auc_score(y, s)),
         "ks": None if single_class else ks_statistic(y, s),
         "default_rate_observed": observed,
         "mean_predicted_pd": predicted,
-        "calibration_ratio": observed / predicted if predicted > 0 else None,
+        "calibration_ratio": relative,
+        "calibration_ratio_raw": raw,
         "approval_rate": float((s < cutoff).mean()),
     }
+
+
+def _calibration_factor(scored: pd.DataFrame) -> float | None:
+    """Default observado / PD media prevista de um frame com `TARGET` e `score`."""
+    if "TARGET" not in scored.columns or not scored["TARGET"].notna().any():
+        return None
+    mean_score = float(scored["score"].mean())
+    if mean_score <= 0:
+        return None
+    return float(scored["TARGET"].mean()) / mean_score
 
 
 def _alerts(summary: dict, reference_auc: float) -> tuple[list[str], list[str]]:
@@ -58,7 +85,7 @@ def _alerts(summary: dict, reference_auc: float) -> tuple[list[str], list[str]]:
             )
         if ratio is not None and ratio > CALIBRATION_ALERT:
             retrain.append(
-                f"Calibração: inadimplência observada é {ratio:.2f}x a PD média prevista "
+                f"Calibração: a razão observado/previsto é {ratio:.2f}x a da referência "
                 f"(limite {CALIBRATION_ALERT})."
             )
     share = summary.get("dataset_drift_share", 0.0)
@@ -200,7 +227,12 @@ def analyze_batch(
         "dataset_drift_share": len(drifted) / len(table),
         "prediction_psi": psi(ref_scored["score"], cur_scored["score"]),
         "performance": (
-            performance(cur_scored["TARGET"].to_numpy(), cur_scored["score"].to_numpy(), cutoff)
+            performance(
+                cur_scored["TARGET"].to_numpy(),
+                cur_scored["score"].to_numpy(),
+                cutoff,
+                reference_factor=_calibration_factor(ref_scored),
+            )
             if labeled
             else None
         ),

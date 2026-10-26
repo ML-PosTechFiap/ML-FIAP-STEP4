@@ -52,6 +52,17 @@ def test_performance_and_calibration():
     assert p["calibration_ratio"] == pytest.approx(2.0) and p["approval_rate"] == 1.0
 
 
+def test_performance_relative_calibration_ratio():
+    y = np.array([0] * 90 + [1] * 10)
+    s = np.full(100, 0.05)
+    raw = performance(y, s, cutoff=0.5)
+    assert raw["calibration_ratio"] == raw["calibration_ratio_raw"] == pytest.approx(2.0)
+    # referencia com razao bruta 4,0: o lote esta 2x mais bem calibrado que ela (2,0 / 4,0)
+    rel = performance(y, s, cutoff=0.5, reference_factor=4.0)
+    assert rel["calibration_ratio_raw"] == pytest.approx(2.0)
+    assert rel["calibration_ratio"] == pytest.approx(0.5)
+
+
 def test_performance_single_class_has_no_auc_or_ks():
     p = performance(np.zeros(50, dtype=int), np.linspace(0.01, 0.5, 50), cutoff=0.2)
     assert p["auc"] is None and p["ks"] is None and p["default_rate_observed"] == 0.0
@@ -98,6 +109,9 @@ def test_analyze_batch_synthetic(trained, tmp_path):
     s01 = analyze_batch(ref, cur01, "01", meta, tmp_path)
     assert s01["drifted_features"] == [] and manifest01["drifted_features"] == []
     assert s01["performance"] is not None and s01["recommendation"] == "OK"
+    # relativo a referencia: ~1,0 num lote sem drift (o bruto fica longe de 1: scale_pos_weight)
+    assert 0.8 < s01["performance"]["calibration_ratio"] < 1.2
+    assert s01["performance"]["calibration_ratio_raw"] < 0.5
 
     cur06, meta, manifest06 = _scored_batch(trained, "06")
     s06 = analyze_batch(ref, cur06, "06", meta, tmp_path)
@@ -129,10 +143,15 @@ def test_analyze_batch_without_target_skips_labeled_metrics(trained, tmp_path):
 
 @pytest.mark.parametrize("batch_id", ["01", "02", "03", "04", "05", "06"])
 def test_manifest_features_are_detected(trained, batch_id):
-    """Revocacao 1 do mapeamento `DRIFT_EFFECTS` contra a regra de drift, em todos os lotes."""
+    """Manifest: `drifted_features` (esperado detectavel) tem revocacao 1 e e subconjunto de
+    `injected_features` (verdade-base). No lote 01 ambos sao vazios."""
     ref = pd.read_parquet(trained.data_dir / "reference" / "test_scored.parquet")
     batch_dir = trained.data_dir / "batches" / batch_id
     manifest = json.loads((batch_dir / "manifest.json").read_text(encoding="utf-8"))
     table = feature_drift_table(ref, pd.read_parquet(batch_dir / "batch.parquet"))
     detected = set(table.loc[table["status"] == "drift", "feature"])
+    assert set(manifest["drifted_features"]) <= set(manifest["injected_features"])
     assert set(manifest["drifted_features"]) <= detected
+    if batch_id == "01":
+        assert manifest["injected_features"] == [] and manifest["drifted_features"] == []
+        assert detected == set()

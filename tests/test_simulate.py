@@ -57,7 +57,8 @@ def test_concept_drift_raises_default_and_keeps_original(prepared):
 
 
 def test_batch_01_has_no_drifted_features(prepared):
-    assert _manifest(prepared, "01")["drifted_features"] == []
+    manifest = _manifest(prepared, "01")
+    assert manifest["injected_features"] == [] and manifest["drifted_features"] == []
 
 
 def test_manifest_content(prepared):
@@ -65,9 +66,16 @@ def test_manifest_content(prepared):
     assert m["batch_id"] == "06"
     assert m["params"]["unemployed_target"] == 0.30
     assert m["n_rows"] == len(pd.read_parquet(prepared.data_dir / "batches/06/batch.parquet"))
-    assert m["drifted_features"] == sorted(m["drifted_features"])
-    assert set(m["drifted_features"]) <= set(config.MODEL_FEATURES)
-    assert {"AGE_YEARS", "EXT_SOURCE_2", "CREDIT_TERM", "YEARS_EMPLOYED"} <= set(m["drifted_features"])
+    for key in ("injected_features", "drifted_features"):
+        assert m[key] == sorted(m[key])
+        assert set(m[key]) <= set(config.MODEL_FEATURES)
+    assert set(m["drifted_features"]) <= set(m["injected_features"])
+    assert {"AGE_YEARS", "EXT_SOURCE_1", "EXT_SOURCE_2", "CREDIT_TERM", "AMT_INCOME_TOTAL"} <= set(
+        m["injected_features"]
+    )
+    assert {"AGE_YEARS", "EXT_SOURCE_2", "CREDIT_TERM", "YEARS_EMPLOYED"} <= set(
+        m["drifted_features"]
+    )
     assert "expected_rules" not in m
     assert _manifest(prepared, "03-dirty")["expected_rules"] == [
         "income_not_null", "age_range", "client_key_unique",
@@ -154,12 +162,29 @@ def test_apply_drift_rules_on_small_frame():
 RATIO_FEATURES = ("CREDIT_INCOME_RATIO", "ANNUITY_INCOME_RATIO")
 
 
+def test_injected_features_mapping():
+    """Verdade-base: toda feature tocada pelos parametros ativos, independente da magnitude."""
+    assert config.injected_features(config.DRIFT_SCHEDULE["01"]) == []
+    f03 = config.injected_features(config.DRIFT_SCHEDULE["03"])
+    assert {"YEARS_EMPLOYED", "CREDIT_TERM", "AMT_INCOME_TOTAL", *RATIO_FEATURES} <= set(f03)
+    assert "AGE_YEARS" not in f03 and "EXT_SOURCE_1" not in f03
+    f06 = config.injected_features(config.DRIFT_SCHEDULE["06"])
+    assert {"EXT_SOURCE_1", "AGE_YEARS", "EXT_SOURCE_3", "AMT_GOODS_PRICE"} <= set(f06)
+    same = config.DriftParams(income_infl=0.1, credit_infl=0.1, annuity_infl=0.1)
+    assert "CREDIT_TERM" not in config.injected_features(same)
+
+
 def test_drifted_features_mapping():
+    """Subconjunto esperado como detectavel: so mudancas acima do minimo calibrado."""
     assert config.drifted_features(config.DRIFT_SCHEDULE["01"]) == []
     f03 = config.drifted_features(config.DRIFT_SCHEDULE["03"])
     assert "CREDIT_TERM" in f03 and "AGE_YEARS" not in f03 and "YEARS_EMPLOYED" not in f03
     f06 = config.drifted_features(config.DRIFT_SCHEDULE["06"])
     assert {"YEARS_EMPLOYED", "AGE_YEARS", "EXT_SOURCE_2", "NAME_INCOME_TYPE"} <= set(f06)
+    assert not {"EXT_SOURCE_1", "AMT_INCOME_TOTAL", *RATIO_FEATURES} & set(f06)
+    for params in config.DRIFT_SCHEDULE.values():
+        assert set(config.drifted_features(params)) <= set(config.injected_features(params))
     same = config.DriftParams(income_infl=0.3, credit_infl=0.3, annuity_infl=0.3)
     f_same = config.drifted_features(same)
+    assert "AMT_CREDIT" in f_same and not {"CREDIT_TERM", *RATIO_FEATURES} & set(f_same)
     assert "AMT_CREDIT" in f_same and not {"CREDIT_TERM", *RATIO_FEATURES} & set(f_same)

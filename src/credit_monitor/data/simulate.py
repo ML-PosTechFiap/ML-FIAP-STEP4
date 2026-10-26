@@ -191,6 +191,7 @@ def _write_batch(
     manifest: dict = {
         "batch_id": batch_id,
         "params": dataclasses.asdict(params),
+        "injected_features": config.injected_features(params),
         "drifted_features": config.drifted_features(params),
         "n_rows": len(batch),
         "n_concept_flips": n_flips,
