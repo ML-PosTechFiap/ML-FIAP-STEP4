@@ -140,11 +140,19 @@ def _configure_simulate_all(parser: argparse.ArgumentParser) -> None:
 
 def _reset_metrics(settings: Settings, args: argparse.Namespace) -> int:
     from credit_monitor.config import SIMULATION_ORDER
-    from credit_monitor.pipeline import reset_metrics
+    from credit_monitor.pipeline import reset_groups
 
-    deleted = reset_metrics(settings)
+    report = reset_groups(settings)
+    if not report.configured:
+        print("Pushgateway não configurado (PUSHGATEWAY_URL): nada a apagar.")
+        return 0
     total = len(SIMULATION_ORDER) + 1
-    print(f"Pushgateway: {deleted} de {total} grupo(s) apagado(s).")
+    message = f"Pushgateway: {report.deleted} de {total} grupo(s) apagado(s)"
+    if report.failed:
+        message += f", {report.failed} falha(s)"
+    if report.unreachable:
+        message += ". Interrompido: gateway inacessível"
+    print(message + ".")
     return 0
 
 

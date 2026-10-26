@@ -1,5 +1,6 @@
 import json
 import re
+import urllib.error
 
 import pandas as pd
 import pytest
@@ -223,18 +224,53 @@ def test_reset_metrics_deletes_every_group(trained, monkeypatch):
     assert {c[:2] for c in calls} == {("http://gw:9091", "credit_pipeline")}
 
 
-def test_reset_metrics_counts_failures_without_raising(trained, monkeypatch):
+def test_reset_metrics_http_errors_are_counted_and_loop_continues(trained, monkeypatch):
+    from dataclasses import replace
+
+    attempts = []
+
+    def flaky(url, job, grouping_key, timeout):
+        attempts.append(grouping_key["batch"])
+        if grouping_key["batch"] == "02":
+            raise urllib.error.HTTPError(url, 500, "erro", None, None)
+
+    monkeypatch.setattr(pipeline, "delete_from_gateway", flaky)
+    report = pipeline.reset_groups(replace(trained, pushgateway_url="http://gw:9091"))
+    assert attempts == [*pipeline.SIMULATION_ORDER, "latest"]  # seguiu ate o fim
+    assert (report.deleted, report.failed, report.unreachable) == (7, 1, False)
+    assert pipeline.reset_metrics(replace(trained, pushgateway_url="http://gw:9091")) == 7
+
+
+@pytest.mark.parametrize("error", [
+    lambda: urllib.error.URLError("sem rota"),
+    lambda: TimeoutError("lento"),
+    lambda: ConnectionRefusedError("recusada"),
+])
+def test_reset_metrics_stops_after_first_connection_failure(trained, monkeypatch, error):
     from dataclasses import replace
 
     attempts = []
 
     def boom(url, job, grouping_key, timeout):
         attempts.append(grouping_key["batch"])
-        raise OSError("fora do ar")
+        raise error()
 
     monkeypatch.setattr(pipeline, "delete_from_gateway", boom)
-    assert pipeline.reset_metrics(replace(trained, pushgateway_url="http://gw:9091")) == 0
-    assert len(attempts) == 1  # desiste na primeira falha: nao trava com o gateway fora
+    report = pipeline.reset_groups(replace(trained, pushgateway_url="http://gw:9091"))
+    assert len(attempts) == 1  # nao trava esperando timeout em cada grupo
+    assert (report.deleted, report.failed, report.unreachable) == (0, 1, True)
+
+
+def test_cli_reset_metrics_reports_abort_and_failures(trained, monkeypatch, capsys):
+    monkeypatch.setenv("PUSHGATEWAY_URL", "http://gw:9091")
+
+    def boom(*args, **kwargs):
+        raise urllib.error.URLError("sem rota")
+
+    monkeypatch.setattr(pipeline, "delete_from_gateway", boom)
+    assert main(["reset-metrics"]) == 0
+    out = capsys.readouterr().out
+    assert "0 de 8" in out and "1 falha" in out and "gateway inacessível" in out
 
 
 def test_reset_metrics_without_gateway_returns_zero(trained, capsys):
@@ -346,3 +382,61 @@ def test_build_index_handles_unlabeled_batch_and_escapes(tmp_path):
     _write_summary(tmp_path, "02", performance=None, recommendation="<b>OK</b>")
     text = build_index(tmp_path).read_text(encoding="utf-8")
     assert "<b>OK</b>" not in text and "&lt;b&gt;OK&lt;/b&gt;" in text
+
+
+# --- caminho de erro no meio da esteira ----------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "target,stage_name", [("build_features", "transform"), ("score", "predict")]
+)
+def test_unexpected_error_publishes_stage_status_zero_and_propagates(
+    trained, recorded, monkeypatch, target, stage_name
+):
+    publishers, trackers = recorded
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("defeito inesperado")
+
+    monkeypatch.setattr(pipeline, target, boom)
+    with pytest.raises(RuntimeError, match="defeito inesperado"):
+        run_monitor(trained, "01")
+    pub = publishers[-1]
+    assert pub.pushes == 1
+    assert _metric(pub, "credit_pipeline_stage_status", stage=stage_name) == 0
+    assert _metric(pub, "credit_pipeline_stage_status", stage="contract") == 1
+    assert ("credit_pipeline_last_success_timestamp", ()) not in pub.values()
+    assert ("credit_monitor_recommendation", ()) not in pub.values()
+
+
+def test_usage_errors_do_not_push(trained, recorded, tmp_path):
+    from dataclasses import replace
+
+    from credit_monitor.model.predict import ModelNotTrained
+
+    publishers, _ = recorded
+    with pytest.raises(BatchNotFound):
+        run_monitor(trained, "99")
+    assert publishers[-1].pushes == 0
+    with pytest.raises(ModelNotTrained):
+        run_monitor(replace(trained, models_dir=tmp_path / "vazio"), "01")
+    assert publishers[-1].pushes == 0
+
+
+# --- trecho de log como artefato do MLflow --------------------------------------------------
+
+
+@pytest.mark.parametrize("batch_id", ["06", "03-dirty"])
+def test_run_log_excerpt_artifact_has_only_this_run(trained, recorded, batch_id):
+    _, trackers = recorded
+    run_monitor(trained, "01")  # outra execucao no mesmo pipeline.jsonl
+    run_monitor(trained, batch_id)
+    artifacts = {p.name: p for p in trackers[-1].artifacts}
+    excerpt = artifacts[f"{batch_id}_run.jsonl"]
+    assert excerpt == trained.reports_dir / "logs" / f"{batch_id}_run.jsonl"
+    entries = [json.loads(line) for line in excerpt.read_text(encoding="utf-8").splitlines()]
+    assert entries and len({e["run_id"] for e in entries}) == 1
+    assert entries[0]["run_id"].startswith(f"{batch_id}-")
+    assert {e["batch_id"] for e in entries} == {batch_id}
+    full = (trained.reports_dir / "logs" / "pipeline.jsonl").read_text(encoding="utf-8")
+    assert len(full.splitlines()) > len(entries)

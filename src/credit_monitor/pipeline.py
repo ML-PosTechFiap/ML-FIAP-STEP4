@@ -6,6 +6,7 @@ import json
 import logging
 import re
 import time
+import urllib.error
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -112,6 +113,22 @@ def _track(
                 tracker.log_artifact(path)
 
 
+def _run_log_excerpt(settings: Settings, batch_id: str, run_id: str) -> Path:
+    """`reports/logs/<lote>_run.jsonl`: so as linhas de `pipeline.jsonl` desta execucao."""
+    source = settings.reports_dir / "logs" / "pipeline.jsonl"
+    lines = []
+    if source.exists():
+        for line in source.read_text(encoding="utf-8").splitlines():
+            try:
+                if json.loads(line).get("run_id") == run_id:
+                    lines.append(line)
+            except ValueError:
+                continue
+    out = settings.reports_dir / "logs" / f"{batch_id}_run.jsonl"
+    out.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+    return out
+
+
 def _evidently_files(summary: dict, drift_dir: Path) -> list[Path]:
     files = []
     for entry in (summary.get("evidently") or {}).values():
@@ -145,7 +162,9 @@ def _block(
     return [json_path, html_path]
 
 
-def _run(settings: Settings, batch_id: str, log, publisher: MetricsPublisher) -> BatchResult:
+def _run(
+    settings: Settings, batch_id: str, run_id: str, log, publisher: MetricsPublisher
+) -> BatchResult:
     model, meta = load_model(settings)  # antes da ingestao: ModelNotTrained sobe sem tocar no lote
     batch_file = _batch_dir(settings, batch_id) / "batch.parquet"
 
@@ -183,7 +202,7 @@ def _run(settings: Settings, batch_id: str, log, publisher: MetricsPublisher) ->
     if not validation.passed:
         publisher.set("credit_pipeline_peak_memory_bytes", peak_memory_bytes())
         _track(tracker, batch_id, {**tags, "status": "blocked", "recommendation": "n/a"},
-               publisher, None, failure_files)
+               publisher, None, [*failure_files, _run_log_excerpt(settings, batch_id, run_id)])
         build_index(settings.reports_dir)
         publisher.push()
         return BatchResult(batch_id, "blocked", None, None)
@@ -208,14 +227,16 @@ def _run(settings: Settings, batch_id: str, log, publisher: MetricsPublisher) ->
     with stage("publish", batch_id, publisher, log) as ctx:
         _publish_summary(publisher, summary, meta)
         publisher.set("credit_pipeline_peak_memory_bytes", peak_memory_bytes())
-        publisher.set("credit_pipeline_last_success_timestamp", time.time())
         ctx.rows_in = ctx.rows_out = len(publisher.values())
         artifacts = [Path(summary["summary_path"]), *_evidently_files(summary, drift_dir)]
         artifacts.append(_batch_dir(settings, batch_id) / "manifest.json")
+        artifacts.append(_run_log_excerpt(settings, batch_id, run_id))
         _track(tracker, batch_id,
                {**tags, "status": "ok", "recommendation": summary["recommendation"]},
                publisher, summary, artifacts)
         build_index(settings.reports_dir)
+    # So depois de tudo ter dado certo: um push de erro nunca carrega este valor.
+    publisher.set("credit_pipeline_last_success_timestamp", time.time())
     publisher.push()  # publicacao unica, ja com as metricas da propria etapa publish
 
     log.info(
@@ -228,10 +249,11 @@ def _run(settings: Settings, batch_id: str, log, publisher: MetricsPublisher) ->
 
 def run_monitor(settings: Settings, batch_id: str) -> BatchResult:
     """Roda a esteira mensal de um lote. Levanta `ModelNotTrained` e `BatchNotFound`."""
-    log = get_logger(settings, f"{batch_id}-{uuid.uuid4().hex[:8]}")
+    run_id = f"{batch_id}-{uuid.uuid4().hex[:8]}"
+    log = get_logger(settings, run_id)
     publisher = MetricsPublisher(settings, batch_id, logger=log)
     try:
-        return _run(settings, batch_id, log, publisher)
+        return _run(settings, batch_id, run_id, log, publisher)
     except Exception as exc:
         # Erro inesperado: publica o status 0 da etapa para o alerta PipelineStageFailed.
         # Lote inexistente ou modelo ausente sao erros de uso, nao falhas da esteira.
@@ -250,26 +272,51 @@ def run_simulate_all(settings: Settings, interval_seconds: float = 0.0) -> list[
     return results
 
 
-def reset_metrics(settings: Settings) -> int:
-    """Apaga do Pushgateway os grupos de cada lote e `latest`. Devolve quantos foram apagados.
+@dataclass
+class ResetReport:
+    deleted: int
+    failed: int
+    unreachable: bool  # gateway inacessivel: o laco foi interrompido
+    configured: bool = True
 
-    Desiste na primeira falha (gateway fora do ar), para nao travar a demo.
+
+def _gateway_unreachable(exc: Exception) -> bool:
+    """Falha de conexao ou timeout (nao uma resposta HTTP de erro de um grupo)."""
+    if isinstance(exc, urllib.error.HTTPError):
+        return False
+    return isinstance(exc, urllib.error.URLError | TimeoutError | ConnectionError)
+
+
+def reset_groups(settings: Settings) -> ResetReport:
+    """Apaga os grupos de cada lote e `latest`, contando falhas sem levantar.
+
+    Erro HTTP de um grupo e contado e o laco segue. A primeira falha de conexao (gateway
+    inacessivel) interrompe o laco, para nao travar a demo esperando timeouts.
     """
     url = settings.pushgateway_url
     if not url:
         _log.warning("Pushgateway não configurado (PUSHGATEWAY_URL); nada a apagar.")
-        return 0
-    deleted = 0
+        return ResetReport(0, 0, False, configured=False)
+    deleted = failed = 0
+    unreachable = False
     for group in [*SIMULATION_ORDER, LATEST]:
         try:
             delete_from_gateway(
                 url, job=JOB, grouping_key={"batch": group}, timeout=settings.http_timeout
             )
         except Exception as exc:
+            failed += 1
+            unreachable = _gateway_unreachable(exc)
             _log.warning(
-                "Falha ao apagar o grupo %s no Pushgateway (%s); interrompendo.",
-                group, type(exc).__name__,
+                "Falha ao apagar o grupo %s no Pushgateway (%s).", group, type(exc).__name__
             )
-            break
+            if unreachable:
+                break
+            continue
         deleted += 1
-    return deleted
+    return ResetReport(deleted, failed, unreachable)
+
+
+def reset_metrics(settings: Settings) -> int:
+    """Apaga do Pushgateway os grupos de cada lote e `latest`. Devolve quantos foram apagados."""
+    return reset_groups(settings).deleted
