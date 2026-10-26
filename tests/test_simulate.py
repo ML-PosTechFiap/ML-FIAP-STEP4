@@ -75,16 +75,27 @@ def test_manifest_content(prepared):
     ]
 
 
-def test_batches_use_disjoint_rows_and_expected_size(prepared):
+def _young_share(df):
+    return float(((-df["DAYS_BIRTH"] / 365.25) < 30).mean())
+
+
+def test_batches_have_expected_size_and_come_from_pool(prepared):
     pool = pd.read_parquet(prepared.data_dir / "reference/production_pool.parquet")
     size = min(config.BATCH_SIZE, len(pool) // 6)
-    seen: set[int] = set()
     for b in CLEAN:
         ids = pd.read_parquet(prepared.data_dir / f"batches/{b}/batch.parquet")["SK_ID_CURR"]
-        assert len(ids) == size and ids.is_unique
-        assert not seen & set(ids)
-        seen |= set(ids)
-    assert seen <= set(pool["SK_ID_CURR"])
+        assert len(ids) == size and ids.is_unique  # sem reposicao dentro do lote
+        assert set(ids) <= set(pool["SK_ID_CURR"])
+
+
+def test_young_share_grows_progressively(prepared):
+    ref = _young_share(pd.read_parquet(prepared.data_dir / "reference/train.parquet"))
+    share = {b: _young_share(pd.read_parquet(prepared.data_dir / f"batches/{b}/batch.parquet"))
+             for b in CLEAN}
+    assert abs(share["01"] - ref) < 0.02
+    assert share["04"] > ref
+    assert share["05"] > share["04"]
+    assert share["06"] > share["05"]
 
 
 def test_dirty_has_five_rows_of_each_defect(prepared):

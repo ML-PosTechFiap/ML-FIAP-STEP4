@@ -1,7 +1,10 @@
 """Simulação de drift mensal progressivo (dados e conceito) e geração dos lotes.
 
-Cada lote `01`..`06` é uma amostra, sem reposição entre lotes, do pool de produção, com o
-drift de `config.DRIFT_SCHEDULE` aplicado. O `03-dirty` é uma cópia do `03` com defeitos de
+Cada lote `01`..`06` é uma amostra independente do pool de produção (sem reposição dentro
+do lote, mas com linhas que podem se repetir entre meses), com o drift de
+`config.DRIFT_SCHEDULE` aplicado. Cada mês é um sorteio independente da população de
+solicitantes; reaproveitar clientes entre meses é aceitável no monitoramento por lote e
+evita esgotar o pool de jovens, o que inverteria o perfil novo dos lotes 04..06. O `03-dirty` é uma cópia do `03` com defeitos de
 qualidade injetados, para exercitar o bloqueio do contrato de dados.
 """
 
@@ -34,16 +37,6 @@ UNEMPLOYED = "Unemployed"
 
 # Os lotes limpos que viram amostras do pool; o `03-dirty` deriva do `03`.
 CLEAN_BATCH_IDS = [b for b in config.SIMULATION_ORDER if not b.endswith("-dirty")]
-# Ordem de amostragem do pool (pequeno, sem reposição): primeiro os lotes sem viés de
-# idade, depois os de `young_weight` decrescente. Assim o pool de jovens, escasso, não
-# é consumido antes pelos lotes limpos e os de viés mais forte têm prioridade.
-SAMPLING_ORDER = sorted(
-    CLEAN_BATCH_IDS,
-    key=lambda b: (
-        config.DRIFT_SCHEDULE[b].young_weight > 0,
-        -config.DRIFT_SCHEDULE[b].young_weight,
-    ),
-)
 
 
 def _age_years(df: pd.DataFrame) -> np.ndarray:
@@ -214,9 +207,11 @@ def build_all_batches(
 ) -> list[str]:
     """Gera `data/batches/<id>/` (batch, manifest e rótulos originais) para todos os lotes.
 
-    Cada lote tem `min(BATCH_SIZE, len(pool) // 6)` linhas, sorteadas sem reposição entre
-    os lotes `01`..`06`. O RNG do lote de índice `i` é `default_rng(seed + i)`. O p75 da
-    razão anuidade/renda vem só do `reference_train`. Devolve os IDs em `SIMULATION_ORDER`.
+    Cada lote tem `min(BATCH_SIZE, len(pool) // 6)` linhas, sorteadas sem reposição dentro
+    do lote. Os lotes são sorteios independentes do pool inteiro (uma linha pode aparecer em
+    meses diferentes), para que o viés de idade de cada mês não dependa do que os outros
+    consumiram. O RNG do lote de índice `i` é `default_rng(seed + i)`. O p75 da razão
+    anuidade/renda vem só do `reference_train`. Devolve os IDs em `SIMULATION_ORDER`.
     """
     pool = pool.reset_index(drop=True)
     size = min(config.BATCH_SIZE, len(pool) // len(CLEAN_BATCH_IDS))
@@ -231,13 +226,11 @@ def build_all_batches(
     ratio = reference_train["AMT_ANNUITY"] / reference_train["AMT_INCOME_TOTAL"]
     annuity_ratio_p75 = float(ratio.quantile(0.75))
 
-    rngs = {b: np.random.default_rng(seed + i) for i, b in enumerate(CLEAN_BATCH_IDS)}
     available = np.arange(len(pool))
     built: dict[str, tuple[pd.DataFrame, pd.Series]] = {}
-    for batch_id in SAMPLING_ORDER:
-        params, rng = config.DRIFT_SCHEDULE[batch_id], rngs[batch_id]
+    for i, batch_id in enumerate(CLEAN_BATCH_IDS):
+        params, rng = config.DRIFT_SCHEDULE[batch_id], np.random.default_rng(seed + i)
         rows = sample_batch(pool, available, size, params.young_weight, rng)
-        available = np.setdiff1d(available, rows, assume_unique=True)
         sampled = pool.iloc[rows].reset_index(drop=True)
         built[batch_id] = apply_drift(sampled, params, annuity_ratio_p75, rng)
 
