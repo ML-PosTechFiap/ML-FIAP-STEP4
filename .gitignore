@@ -1,6 +1,6 @@
-data/
-reports/
-models/
+/data/
+/reports/
+/models/
 .env
 __pycache__/
 .pytest_cache/
