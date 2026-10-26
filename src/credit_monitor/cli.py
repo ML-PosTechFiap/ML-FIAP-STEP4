@@ -80,10 +80,81 @@ def _train(settings: Settings, args: argparse.Namespace) -> int:
     return 0
 
 
+def parse_interval(text: str) -> float:
+    """Segundos, com ou sem sufixo `s`: `30` ou `30s`."""
+    try:
+        value = float(text.strip().removesuffix("s"))
+    except ValueError:
+        value = -1.0
+    if not value >= 0:  # tambem rejeita NaN
+        raise argparse.ArgumentTypeError(
+            f"intervalo inválido: {text!r} (use segundos, como 30 ou 30s)"
+        )
+    return value
+
+
+def _monitor(settings: Settings, args: argparse.Namespace) -> int:
+    from credit_monitor.model.predict import ModelNotTrained
+    from credit_monitor.pipeline import BatchNotFound, run_monitor
+
+    try:
+        result = run_monitor(settings, args.batch)
+    except (BatchNotFound, ModelNotTrained) as exc:
+        print(exc)
+        return 2
+    if result.status == "blocked":
+        print(f"Lote {result.batch_id} bloqueado pelo contrato de dados. "
+              f"Detalhes em {settings.reports_dir / 'contracts'}.")
+        return 1
+    print(f"Lote {result.batch_id} processado: recomendação {result.recommendation}. "
+          f"Resumo em {result.summary_path}.")
+    return 0
+
+
+def _configure_monitor(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--batch", required=True, help="identificador do lote (ex.: 01, 03-dirty)")
+
+
+def _simulate_all(settings: Settings, args: argparse.Namespace) -> int:
+    from credit_monitor.model.predict import ModelNotTrained
+    from credit_monitor.pipeline import BatchNotFound, run_simulate_all
+
+    try:
+        results = run_simulate_all(settings, interval_seconds=args.interval)
+    except (BatchNotFound, ModelNotTrained) as exc:
+        print(exc)
+        return 2
+    for result in results:
+        if result.status == "blocked":
+            print(f"Lote {result.batch_id}: bloqueado pelo contrato de dados.")
+        else:
+            print(f"Lote {result.batch_id}: recomendação {result.recommendation}.")
+    print(f"Índice dos relatórios: {settings.reports_dir / 'index.html'}.")
+    return 0
+
+
+def _configure_simulate_all(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--interval", type=parse_interval, default=0.0,
+                        help="pausa entre lotes, em segundos (ex.: 30 ou 30s)")
+
+
+def _reset_metrics(settings: Settings, args: argparse.Namespace) -> int:
+    from credit_monitor.config import SIMULATION_ORDER
+    from credit_monitor.pipeline import reset_metrics
+
+    deleted = reset_metrics(settings)
+    total = len(SIMULATION_ORDER) + 1
+    print(f"Pushgateway: {deleted} de {total} grupo(s) apagado(s).")
+    return 0
+
+
 register("purge", _purge)
 register("download", _download)
 register("prepare", _prepare, _configure_prepare)
 register("train", _train)
+register("monitor", _monitor, _configure_monitor)
+register("simulate-all", _simulate_all, _configure_simulate_all)
+register("reset-metrics", _reset_metrics)
 
 
 def build_parser() -> argparse.ArgumentParser:
