@@ -1,0 +1,74 @@
+groups:
+  - name: credit-monitoring
+    rules:
+      - alert: DataContractViolation
+        expr: credit_contract_passed{batch="latest"} == 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "O último lote violou o contrato de dados e foi bloqueado (veja credit_contract_violations por regra)."
+
+      - alert: PipelineStageFailed
+        expr: credit_pipeline_stage_status{batch="latest"} == 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "A etapa {{ $labels.stage }} do pipeline falhou no último lote."
+
+      - alert: FeatureDriftDetected
+        expr: credit_feature_psi{batch="latest"} >= 0.2
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Drift na feature {{ $labels.feature }}: PSI {{ $value | printf \"%.2f\" }} (limite 0,20)."
+
+      - alert: DatasetDriftDetected
+        expr: credit_dataset_drift_share{batch="latest"} >= 0.3
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $value | humanizePercentage }} das features apresentam drift (limite 30%)."
+
+      - alert: PredictionDrift
+        expr: credit_prediction_psi{batch="latest"} >= 0.2
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Drift no score do modelo: PSI {{ $value | printf \"%.2f\" }} (limite 0,20)."
+
+      - alert: ModelPerformanceDegraded
+        expr: credit_model_auc{batch="latest"} < on(batch) credit_model_auc_reference{batch="latest"} - 0.05
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "AUC do lote ({{ $value | printf \"%.3f\" }}) caiu mais de 0,05 abaixo da referência."
+
+      - alert: ModelMiscalibrated
+        expr: credit_calibration_ratio{batch="latest"} > 1.3
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Modelo descalibrado: PD prevista é {{ $value | printf \"%.2f\" }}x a inadimplência observada (limite 1,3x)."
+
+      - alert: FairnessDegraded
+        expr: credit_fairness_disparate_impact{batch="latest"} < 0.8
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Impacto disparato de {{ $labels.attribute }} abaixo de 0,8: {{ $value | printf \"%.2f\" }}."
+
+      - alert: InfraTargetDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "O alvo {{ $labels.job }} ({{ $labels.instance }}) está fora do ar há mais de 1 minuto."

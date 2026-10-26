@@ -17,3 +17,11 @@ jobs:
       - run: pip install -e .[dev]
       - run: ruff check .
       - run: pytest -q
+
+  promtool:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: >
+          docker run --rm -v "$PWD/infra/prometheus:/p" --entrypoint promtool
+          prom/prometheus:v2.55.1 check rules /p/alerts.yml
