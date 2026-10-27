@@ -518,3 +518,8 @@ Histórico semântico (Conventional Commits), um commit por unidade coerente: `d
   do `FairnessDegraded`, `pipeline_stage_status = -1` para bloqueio e `batch_info`; achado permanente de viés
   por idade.
 - §8.1: `usecols` com 21 colunas (a contagem de 18 estava errada).
+- §2: o contrato usa `pa.DataFrameSchema`, não `DataFrameModel`: os domínios das categóricas são
+  montados em tempo de execução a partir da referência, o que um modelo declarativo estático não expressa.
+- Revisão final: o `PSEUDONYMIZATION_SALT` de exemplo do `.env.example` é rejeitado, além do salt vazio
+  (um salt público equivale a nenhum, porque `SK_ID_CURR` é um inteiro pequeno e o hash seria revertido
+  por força bruta).

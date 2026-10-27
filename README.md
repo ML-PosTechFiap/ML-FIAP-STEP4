@@ -92,7 +92,7 @@ desativação após a primeira falha). Os logs JSONL e os relatórios HTML em `r
 |---|---|
 | `src/credit_monitor/` | Pacote: `contracts/` (Pandera), `data/` (download, preparo, simulação), `model/` (features, treino, viés), `drift/` (PSI/KS, Evidently, causal), `privacy/` (pseudonimização, retenção), `observability/` (logs, métricas, MLflow, etapas), `pipeline.py` |
 | `infra/` | Prometheus (`prometheus.yml`, `alerts.yml`), Grafana (provisionamento e dashboard), Loki, imagem do MLflow |
-| `tests/` | Suíte pytest (176 testes passam), com gerador de dados sintéticos no mesmo schema |
+| `tests/` | Suíte pytest (185 testes passam), com gerador de dados sintéticos no mesmo schema |
 | `docs/evidence/` | Cópia versionada dos relatórios finais, das capturas de tela e do `RESULTADOS.md` |
 | `docs/superpowers/specs/` | Spec de design (fonte dos requisitos e das decisões) |
 | `docs/roteiro-video.md` | Roteiro STAR do vídeo |
@@ -105,13 +105,21 @@ Pré-requisitos: Docker Desktop. Os comandos abaixo são para PowerShell, na rai
 ### 3.1 Configuração
 
 ```powershell
-Copy-Item .env.example .env
-# edite o .env: troque PSEUDONYMIZATION_SALT e GF_SECURITY_ADMIN_PASSWORD
+Copy-Item .env.example .env   # Linux/macOS: cp .env.example .env
+# edite o .env: defina PSEUDONYMIZATION_SALT (veja abaixo) e troque GF_SECURITY_ADMIN_PASSWORD
 docker compose up -d --build mlflow pushgateway prometheus grafana loki
 ```
 
-O `PSEUDONYMIZATION_SALT` é obrigatório: com salt vazio a pseudonimização é rejeitada, porque o hash
-ficaria reversível. O usuário do Grafana é `admin`, com a senha de `GF_SECURITY_ADMIN_PASSWORD`.
+O `PSEUDONYMIZATION_SALT` é obrigatório e deve ser secreto. Gere um valor próprio e grave no `.env`:
+
+```powershell
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+O `prepare` e o `monitor` **rejeitam por projeto** o salt vazio e também o valor de exemplo do
+`.env.example` (`troque-este-valor`): `SK_ID_CURR` é um inteiro pequeno (cerca de 100 mil a 456 mil), e com
+um salt público o hash seria revertido por força bruta em segundos. O usuário do Grafana é `admin`, com a
+senha de `GF_SECURITY_ADMIN_PASSWORD`.
 
 **Portas.** Os padrões são Grafana 3000, Prometheus 9090, MLflow 5000, Loki 3100 e Pushgateway 9091.
 Se outra stack já ocupa alguma, sobrescreva no `.env` (`GRAFANA_PORT`, `PROMETHEUS_PORT`, `MLFLOW_PORT`,
@@ -151,7 +159,7 @@ docker compose run --rm pipeline causal              # análise causal sobre o l
 |---|---|
 | `download` | Baixa o CSV pela API do Kaggle ou confere o arquivo manual |
 | `prepare [--synthetic] [--n]` | Aplica o contrato à base bruta e grava as falhas reais, limpa a referência, faz o split (referência 60%: treino 70%, validação 15%, teste 15%; pool de produção 40%) e gera os lotes e o `03-dirty` com `manifest.json` |
-| `train` | Valida a referência, treina o XGBoost, avalia, faz a auditoria de viés e registra o modelo |
+| `train` | Valida a referência, treina o XGBoost, avalia, faz a auditoria de viés e registra o modelo (código de saída 2 se faltar rodar o `prepare`) |
 | `monitor --batch <id>` | Roda a esteira mensal para um lote (código de saída 1 se bloqueado, 2 se faltar modelo ou lote) |
 | `simulate-all [--interval 20s]` | Roda os sete lotes em sequência, opcionalmente espaçados (bom para gravar o Grafana ao vivo) |
 | `causal [--batch 06]` | Decomposição, ablação e SHAP; grava `reports/causal/causal_report.{html,json}` |
@@ -165,13 +173,18 @@ docker compose run --rm --no-deps --entrypoint pytest pipeline
 docker compose run --rm --no-deps --entrypoint ruff pipeline check .
 ```
 
-O CI (GitHub Actions) roda `ruff`, `pytest` (dados sintéticos) e `promtool check rules` sobre o
-`alerts.yml`.
+O CI (GitHub Actions) roda `ruff`, `pytest` (dados sintéticos) e `promtool check rules` e
+`promtool check config` sobre o `alerts.yml` e o `prometheus.yml`.
 
 ## 4. Etapas 1 a 3, com evidências
 
 Todos os relatórios abaixo estão versionados em [`docs/evidence/`](docs/evidence/index.html): o índice
 `index.html` liga a tabela por lote aos relatórios de cada um.
+
+> **Os relatórios `.html` não renderizam no GitHub** (a interface mostra o código-fonte, e os do Evidently
+> têm cerca de 5 MB). Para ver os relatórios interativos, **clone o repositório e abra
+> `docs/evidence/index.html` no navegador**. Capturas das principais telas estão abaixo e em
+> `docs/evidence/img/`.
 
 ### 4.1 Etapa 1: contrato de dados e modelo base
 
@@ -211,6 +224,11 @@ lote bloqueia de novo. O estágio fica com `pipeline_stage_status = -1` (bloquea
 | Lote `03-dirty` (cópia do `03` com defeitos injetados) | **Bloqueado** com exatamente as 6 regras esperadas: `client_key_unique` (10), `ext_source_range` (5), `age_range` (5), `credit_positive` (5), `domain_NAME_CONTRACT_TYPE` (5), `income_not_null` (5). Relatório: [`03-dirty_failures.html`](docs/evidence/contracts/03-dirty_failures.html) |
 | Lotes `01` a `06` | Todos passam no contrato |
 
+![Relatório HTML do contrato de dados para o lote 03-dirty: seis regras violadas e amostra de falhas com client_key](docs/evidence/img/contrato-03-dirty.png)
+
+*Relatório de falhas do lote `03-dirty` (`docs/evidence/contracts/03-dirty_failures.html`): contagem por regra
+e amostra balanceada entre as regras, com o valor ofensor e a `client_key` (nunca o ID bruto).*
+
 **Modelo base** (`XGBClassifier` num `Pipeline` do scikit-learn, `scale_pos_weight = neg/pos`, early
 stopping na validação, `SEED = 42`). No conjunto de teste da referência:
 
@@ -246,7 +264,8 @@ Premissas e decisões de modelagem:
   drift de idade saía na direção errada.
 - **Premissa de rótulos.** O rótulo chega junto com o lote. Em produção o rótulo chegaria com atraso;
   por isso o dashboard separa sinais **sem rótulo** (drift de dados e de predição) dos sinais **com rótulo**
-  (desempenho e calibração). Um lote sem `TARGET` pula as métricas com rótulo.
+  (desempenho e calibração). Um lote **sem a coluna** `TARGET` pula as métricas com rótulo. Uma coluna
+  `TARGET` presente mas toda `NaN` não é "sem rótulo": o contrato a bloqueia (`target_binary`).
 - **Concept drift sintético.** No segmento "espremido" (`ANNUITY_INCOME_RATIO` acima do p75 da referência
   ou desempregado), parte dos `TARGET = 0` vira `1`: 899 linhas no `04`, 1.723 no `05`, 2.518 no `06`.
   Os rótulos originais ficam em `labels_original.parquet`, invisíveis ao monitoramento, e só o `causal`
@@ -351,6 +370,14 @@ Relatórios do Evidently por lote: [`01`](docs/evidence/drift/01_data_drift.html
 [`06`](docs/evidence/drift/06_data_drift.html) (drift de dados) e os de desempenho
 ([`06`](docs/evidence/drift/06_performance.html)). Os resumos estão em
 [`drift/*_summary.json`](docs/evidence/drift/06_summary.json).
+
+![Relatório de drift do Evidently para o lote 06, com a tabela de colunas, distribuições e PSI](docs/evidence/img/evidently-drift-06.png)
+
+*Relatório de drift do Evidently para o lote `06` (`docs/evidence/drift/06_data_drift.html`): distribuição de
+referência e atual por coluna, com o PSI do próprio Evidently. O resumo do Evidently (7 de 23 colunas, 0,304,
+com o limiar padrão dele de 0,5 para o dataset) é uma leitura separada: a regra que dispara os alertas é a do
+PSI/KS próprio do projeto (13 de 22 features, drift share 59,1%, tabela acima), e o PSI do Evidently pode divergir do próprio em
+colunas com muitos valores repetidos.*
 
 ### 4.3 Etapa 3: observabilidade
 
@@ -465,7 +492,7 @@ Cada medida está ligada ao arquivo que a implementa e, quando há, ao teste que
 | Medida | Implementação | Onde |
 |---|---|---|
 | **Minimização** | `usecols`: o `prepare` lê só 21 das 122 colunas do CSV | `src/credit_monitor/config.py` (`RAW_COLUMNS`), `src/credit_monitor/data/prepare.py` |
-| **Pseudonimização** | `client_key = HMAC-SHA256(PSEUDONYMIZATION_SALT, SK_ID_CURR)` (16 caracteres hex) na ingestão; salt no `.env`; salt vazio é rejeitado | `src/credit_monitor/privacy/pseudonymize.py` |
+| **Pseudonimização** | `client_key = HMAC-SHA256(PSEUDONYMIZATION_SALT, SK_ID_CURR)` (16 caracteres hex) na ingestão; salt no `.env`; salt vazio ou igual ao valor de exemplo é rejeitado | `src/credit_monitor/privacy/pseudonymize.py` |
 | **Observabilidade sem dado individual** | Logs com campos fixos e sem linhas; catálogo fechado de métricas, só agregados; falhas do contrato citam `client_key`, nunca o ID bruto | `src/credit_monitor/observability/logging.py`, `observability/metrics.py`, `contracts/validate.py`. Testes: `tests/test_pipeline.py::test_no_raw_ids_leak` e `tests/test_contracts.py::test_failures_never_contain_raw_id`. Varredura nos arquivos de evidência reais: [`RESULTADOS.md`, observação 6](docs/evidence/RESULTADOS.md) |
 | **Atributo de risco fora do modelo** | `CODE_GENDER` só na auditoria de viés, fora de `MODEL_FEATURES` | `src/credit_monitor/config.py`, `src/credit_monitor/model/fairness.py` |
 | **Retenção executável** | `purge`: quarentena maior que 30 dias e logs maiores que 90 dias; Loki com `retention_period: 2160h` (90 dias); Prometheus com `--storage.tsdb.retention.time=395d` | `src/credit_monitor/privacy/retention.py` (`RETENTION_DAYS` em `config.py`), `infra/loki/loki-config.yml`, `docker-compose.yml` |
@@ -544,7 +571,7 @@ processo organizacional descrito aqui, não um serviço do projeto.
 |---|---|---|
 | Dados da proposta | 5 anos após o fim da relação | Política (sistema de origem); o pipeline não guarda cópia além dos lotes simulados |
 | Quarentena (`data/quarantine/`) | 30 dias | `purge` (`RETENTION_DAYS["quarantine"]`) |
-| Logs (`reports/logs/` e Loki) | 90 dias | `purge` (`RETENTION_DAYS["logs"]`) e `retention_period: 2160h` no Loki |
+| Logs (`reports/logs/` e Loki) | 90 dias | `purge` (`RETENTION_DAYS["logs"]`) e `retention_period: 2160h` no Loki. No disco a retenção vale **por arquivo** (pelo mtime): `pipeline.jsonl` é *append-only* e seu mtime se renova a cada execução, então só os `<lote>_run.jsonl` antigos são removidos. Os logs não contêm dado pessoal; o Loki aplica os 90 dias por linha |
 | Métricas | 13 meses | `--storage.tsdb.retention.time=395d` no Prometheus |
 | Modelos e relatórios agregados | Vida do modelo mais 5 anos | Política; contêm apenas agregados |
 
@@ -652,11 +679,11 @@ a recuperação do PSI do score (sem ablação, no `06`, o PSI do score é 0,298
 
 | # | Feature | PSI do score após | Recuperação do PSI | AUC após | Recuperação de AUC | Calibração após |
 |---|---|---|---|---|---|---|
-| 1 | `EXT_SOURCE_2` | 0,081 | 73,0% | 0,5867 | +0,0193 | 2,374 |
-| 2 | `EXT_SOURCE_3` | 0,130 | 56,6% | 0,5838 | +0,0029 | 2,329 |
-| 3 | `YEARS_EMPLOYED` | 0,245 | 17,9% | 0,5882 | +0,0280 | 2,199 |
-| 4 | `EXT_SOURCE_1` | 0,249 | 16,4% | 0,5844 | +0,0064 | 2,191 |
-| 5 | `AMT_CREDIT` | 0,254 | 14,8% | 0,5822 | -0,0066 | 2,210 |
+| 1 | `EXT_SOURCE_2` | 0,081 | 73,0% | 0,5867 | +1,9% | 2,374 |
+| 2 | `EXT_SOURCE_3` | 0,130 | 56,6% | 0,5838 | +0,3% | 2,329 |
+| 3 | `YEARS_EMPLOYED` | 0,245 | 17,9% | 0,5882 | +2,8% | 2,199 |
+| 4 | `EXT_SOURCE_1` | 0,249 | 16,4% | 0,5844 | +0,6% | 2,191 |
+| 5 | `AMT_CREDIT` | 0,254 | 14,8% | 0,5822 | -0,7% | 2,210 |
 
 ### 8.4 SHAP antes e depois
 
