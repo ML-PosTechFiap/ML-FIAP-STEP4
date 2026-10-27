@@ -53,6 +53,10 @@ METRIC_CATALOG: dict[str, tuple[str, list[str]]] = {
         "Impacto disparato da aprovacao por atributo",
         ["attribute"],
     ),
+    "credit_fairness_disparate_impact_reference": (
+        "Impacto disparato da aprovacao por atributo na base de referencia",
+        ["attribute"],
+    ),
 }
 
 ValuesKey = tuple[str, tuple[tuple[str, str], ...]]

@@ -147,6 +147,8 @@ PRED_PSI_ALERT = 0.20
 AUC_DROP_ALERT = 0.05
 CALIBRATION_ALERT = 1.3
 DISPARATE_IMPACT_MIN = 0.8
+# O alerta de vies dispara so quando o impacto disparato piora mais que isto em relacao a referencia.
+FAIRNESS_DEGRADATION_MARGIN = 0.05
 
 
 # --- Cenario de drift (spec 6.1) ---------------------------------------------------

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from credit_monitor.drift.detect import analyze_batch, performance, recommend
+from credit_monitor.drift.detect import _alerts, analyze_batch, performance, recommend
 from credit_monitor.drift.stats import feature_drift_table, ks, psi
 
 rng = np.random.default_rng(0)
@@ -14,6 +14,15 @@ def test_psi_identical_near_zero_and_shift_large():
     x = pd.Series(rng.normal(size=20_000))
     assert psi(x, x.sample(frac=1, random_state=1)) < 0.01
     assert psi(x, x * 1.3 + 0.5) > 0.2
+
+
+def test_psi_tied_values_robust_to_small_shift():
+    # renda real: poucos niveis redondos com muita massa em cada um, mais valores raros avulsos
+    levels = np.array([67500.0, 112500.0, 135000.0, 157500.0, 202500.0, 270000.0])
+    common = rng.choice(levels, size=29_400, p=[0.1, 0.2, 0.25, 0.2, 0.15, 0.1])
+    x = pd.Series(np.concatenate([common, rng.uniform(60_000, 300_000, size=600).round(-2)]))
+    assert psi(x, x * 1.02) < 0.10
+    assert psi(x, x * 1.25) >= 0.20
 
 
 @pytest.mark.parametrize(
@@ -87,6 +96,28 @@ def test_recommend_rules():
         == "RETREINAR"
     )
     assert recommend({**base, "performance": None, "prediction_psi": 0.3}, 0.75) == "INVESTIGAR"
+
+
+def test_recommend_fairness_flags_degradation_not_baseline():
+    base = {
+        "dataset_drift_share": 0.0,
+        "prediction_psi": 0.0,
+        "performance": {"auc": 0.75, "calibration_ratio": 1.0},
+        "fairness_reference": {"age_band": 0.54},
+    }
+    # baixo desde a referencia, sem piora (0,52 >= 0,54 - 0,05): sem motivo de vies
+    low = {**base, "fairness": {"age_band": 0.52}}
+    assert recommend(low, 0.75) == "OK"
+    assert not any("Impacto" in r for r in _alerts(low, 0.75)[1])
+    # piora de mais de 0,05 e abaixo de 0,8: investigar, com o texto da piora
+    worse = {**base, "fairness": {"age_band": 0.45}}
+    assert recommend(worse, 0.75) == "INVESTIGAR"
+    assert any("piorou em relação à referência" in r for r in _alerts(worse, 0.75)[1])
+    # piora, mas ainda acima de 0,8: sem motivo
+    ok = {**base, "fairness_reference": {"age_band": 0.99}, "fairness": {"age_band": 0.85}}
+    assert recommend(ok, 0.75) == "OK"
+    # sem referencia no resumo: vale a regra absoluta
+    assert recommend({**base, "fairness_reference": {}, "fairness": {"age_band": 0.52}}, 0.75) == "INVESTIGAR"
 
 
 def _scored_batch(settings, batch_id):

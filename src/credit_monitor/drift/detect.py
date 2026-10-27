@@ -16,6 +16,7 @@ from credit_monitor.config import (
     CATEGORICAL_FEATURES,
     DISPARATE_IMPACT_MIN,
     DRIFT_SHARE_ALERT,
+    FAIRNESS_DEGRADATION_MARGIN,
     MODEL_FEATURES,
     NUMERIC_FEATURES,
     PRED_PSI_ALERT,
@@ -94,11 +95,17 @@ def _alerts(summary: dict, reference_auc: float) -> tuple[list[str], list[str]]:
     pred_psi = summary.get("prediction_psi", 0.0)
     if pred_psi >= PRED_PSI_ALERT:
         investigate.append(f"PSI do score {pred_psi:.3f} (limite {PRED_PSI_ALERT}).")
+    reference_fairness = summary.get("fairness_reference") or {}
     for attribute, impact in (summary.get("fairness") or {}).items():
-        if impact < DISPARATE_IMPACT_MIN:
-            investigate.append(
-                f"Impacto disparato de {attribute} {impact:.2f} (mínimo {DISPARATE_IMPACT_MIN})."
-            )
+        if impact >= DISPARATE_IMPACT_MIN:
+            continue
+        baseline = reference_fairness.get(attribute)
+        if baseline is not None and impact >= baseline - FAIRNESS_DEGRADATION_MARGIN:
+            continue  # baixo desde a referencia, mas sem piora: achado permanente, nao alerta
+        reason = f"Impacto disparato de {attribute} {impact:.2f} (mínimo {DISPARATE_IMPACT_MIN}"
+        if baseline is not None:
+            reason += f"; piorou em relação à referência, {baseline:.2f}"
+        investigate.append(reason + ").")
     return retrain, investigate
 
 
@@ -237,6 +244,11 @@ def analyze_batch(
             else None
         ),
         "fairness": {name: report["disparate_impact"] for name, report in fairness.items()},
+        "fairness_reference": {
+            name: meta["fairness"][name]["disparate_impact"]
+            for name in fairness
+            if name in (meta.get("fairness") or {})
+        },
         "evidently": evidently["paths"],
         "psi": evidently["psi"],
     }

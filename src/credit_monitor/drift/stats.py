@@ -28,6 +28,15 @@ def _numeric_counts(reference: pd.Series, current: pd.Series, bins: int) -> tupl
     if len(ref_valid):
         # Cortes internos (quantis), sem repeticao; bordas externas implicitas em -inf/inf.
         cuts = np.unique(np.quantile(ref_valid, np.linspace(0, 1, bins + 1)[1:-1]))
+        # Cada borda vai para o meio entre o corte e o proximo valor da grade de percentis da
+        # referencia acima dele. Num valor de empate (renda: 112500, 135000, ...) esse proximo
+        # valor e o nivel redondo seguinte, nao um valor raro colado no corte (o proximo valor
+        # distinto sozinho ficaria a ~0,4% do corte e nao protegeria nada). Assim nenhuma massa
+        # de empate fica sobre uma borda, e uma inflacao pequena nao a empurra para outro bin.
+        grid = np.unique(np.quantile(ref_valid, np.linspace(0, 1, 101)))
+        above = np.searchsorted(grid, cuts, side="right")
+        has_next = above < len(grid)  # corte no maximo da referencia: nada acima dele
+        cuts = np.unique((cuts[has_next] + grid[above[has_next]]) / 2)
     else:
         cuts = np.array([])
 

@@ -58,12 +58,15 @@ groups:
           summary: "Modelo descalibrado: PD prevista é {{ $value | printf \"%.2f\" }}x a inadimplência observada (limite 1,3x)."
 
       - alert: FairnessDegraded
-        expr: credit_fairness_disparate_impact{batch="latest"} < 0.8
+        expr: >-
+          credit_fairness_disparate_impact{batch="latest"} < 0.8
+          and on(batch, attribute)
+          credit_fairness_disparate_impact{batch="latest"} < on(batch, attribute) credit_fairness_disparate_impact_reference{batch="latest"} - 0.05
         for: 0m
         labels:
           severity: warning
         annotations:
-          summary: "Impacto disparato de {{ $labels.attribute }} abaixo de 0,8: {{ $value | printf \"%.2f\" }}."
+          summary: "Impacto disparato de {{ $labels.attribute }} abaixo de 0,8 e piorou em relação à referência: {{ $value | printf \"%.2f\" }}."
 
       - alert: InfraTargetDown
         expr: up == 0

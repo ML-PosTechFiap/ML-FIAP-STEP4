@@ -78,6 +78,10 @@ def _publish_summary(publisher: MetricsPublisher, summary: dict, meta: dict) -> 
             _set_number(publisher, metric, performance.get(key))
     for attribute, impact in (summary.get("fairness") or {}).items():
         _set_number(publisher, "credit_fairness_disparate_impact", impact, attribute=attribute)
+    for attribute, impact in (summary.get("fairness_reference") or {}).items():
+        _set_number(
+            publisher, "credit_fairness_disparate_impact_reference", impact, attribute=attribute
+        )
 
     publisher.set("credit_monitor_recommendation", RECOMMENDATION_CODES[summary["recommendation"]])
     publisher.set("credit_model_auc_reference", meta["reference_metrics"]["auc"])

@@ -160,6 +160,12 @@ def test_ok_batch_publishes_all_metrics_once(trained, recorded):
     assert _metric(pub, "credit_calibration_ratio") == summary["performance"]["calibration_ratio"]
     for attribute, impact in summary["fairness"].items():
         assert _metric(pub, "credit_fairness_disparate_impact", attribute=attribute) == impact
+    assert summary["fairness_reference"].keys() == summary["fairness"].keys()
+    for attribute, impact in summary["fairness_reference"].items():
+        assert (
+            _metric(pub, "credit_fairness_disparate_impact_reference", attribute=attribute)
+            == impact
+        )
     assert _metric(pub, "credit_model_auc_reference") > 0.5
     assert _metric(pub, "credit_pipeline_last_success_timestamp") > 1e9
     assert _metric(pub, "credit_pipeline_peak_memory_bytes") >= 0

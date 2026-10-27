@@ -1508,6 +1508,32 @@
           "range": false,
           "format": "table",
           "legendFormat": "__auto"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "C",
+          "expr": "credit_fairness_disparate_impact{batch!=\"latest\", attribute=\"gender\"} * 0 + on(attribute) group_left() credit_fairness_disparate_impact_reference{batch=\"latest\", attribute=\"gender\"}",
+          "editorMode": "code",
+          "instant": true,
+          "range": false,
+          "format": "table",
+          "legendFormat": "__auto"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "refId": "D",
+          "expr": "credit_fairness_disparate_impact{batch!=\"latest\", attribute=\"age_band\"} * 0 + on(attribute) group_left() credit_fairness_disparate_impact_reference{batch=\"latest\", attribute=\"age_band\"}",
+          "editorMode": "code",
+          "instant": true,
+          "range": false,
+          "format": "table",
+          "legendFormat": "__auto"
         }
       ],
       "transformations": [
@@ -1531,7 +1557,9 @@
           "options": {
             "renameByName": {
               "Value #A": "gender",
-              "Value #B": "age_band"
+              "Value #B": "age_band",
+              "Value #C": "gender (referência)",
+              "Value #D": "age_band (referência)"
             }
           }
         }
@@ -1564,9 +1592,26 @@
             ]
           },
           "mappings": [],
-          "min": 0
+          "min": 0,
+          "decimals": 3
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^.*\\(referência\\)$"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "gray"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "xField": "batch",
@@ -1579,14 +1624,14 @@
         "legend": {
           "displayMode": "list",
           "placement": "bottom",
-          "showLegend": false
+          "showLegend": true
         },
         "tooltip": {
           "mode": "multi",
           "sort": "none"
         }
       },
-      "description": "Regra dos 4/5: abaixo de 0,8 (linha) há indício de impacto desproporcional."
+      "description": "Regra dos 4/5: abaixo de 0,8 (linha) há indício de impacto desproporcional. As barras cinzas repetem o impacto disparato da referência (credit_fairness_disparate_impact_reference); o alerta FairnessDegraded só dispara se o lote ficar abaixo de 0,8 e piorar mais de 0,05 em relação a ela."
     },
     {
       "id": 20,
