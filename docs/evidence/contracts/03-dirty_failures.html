@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Falhas do contrato de dados - lote 03-dirty</title>
+<style>
+body { font-family: sans-serif; margin: 2rem; }
+table { border-collapse: collapse; margin-bottom: 2rem; }
+th, td { border: 1px solid #ccc; padding: 4px 10px; text-align: left; }
+th { background: #f0f0f0; }
+</style>
+</head>
+<body>
+<h1>Contrato de dados - lote 03-dirty</h1>
+<p>Situacao: <strong>BLOQUEADO</strong> | versao do contrato: 1.0
+| linhas no lote: 20000</p>
+<h2>Violacoes por regra</h2>
+<table>
+<tr><th>Regra</th><th>Ocorrencias</th></tr>
+<tr><td>client_key_unique</td><td>10</td></tr><tr><td>ext_source_range</td><td>5</td></tr><tr><td>age_range</td><td>5</td></tr><tr><td>credit_positive</td><td>5</td></tr><tr><td>domain_NAME_CONTRACT_TYPE</td><td>5</td></tr><tr><td>income_not_null</td><td>5</td></tr>
+</table>
+<h2>Amostra de falhas (ate 500 linhas)</h2>
+<table>
+<tr><th>Regra</th><th>Coluna</th><th>Valor ofensor</th><th>client_key</th></tr>
+<tr><td>client_key_unique</td><td>client_key</td><td>fe16d2e6c60e2bd3</td><td>fe16d2e6c60e2bd3</td></tr><tr><td>ext_source_range</td><td>EXT_SOURCE_2</td><td>1.5</td><td>4912c4a078951a1c</td></tr><tr><td>age_range</td><td>DAYS_BIRTH</td><td>-5478.75</td><td>6babc856f6fc7d8e</td></tr><tr><td>age_range</td><td>DAYS_BIRTH</td><td>-5478.75</td><td>41b4a0d5aca0a0f0</td></tr><tr><td>age_range</td><td>DAYS_BIRTH</td><td>-5478.75</td><td>f5e2320480a5f707</td></tr><tr><td>age_range</td><td>DAYS_BIRTH</td><td>-5478.75</td><td>5aa0ffe19cedd3c0</td></tr><tr><td>age_range</td><td>DAYS_BIRTH</td><td>-5478.75</td><td>5ba0ed38c9dc41bf</td></tr><tr><td>ext_source_range</td><td>EXT_SOURCE_2</td><td>1.5</td><td>f9def755f23bbaf9</td></tr><tr><td>ext_source_range</td><td>EXT_SOURCE_2</td><td>1.5</td><td>2116733c4d43bf51</td></tr><tr><td>credit_positive</td><td>AMT_CREDIT</td><td>-599544.0</td><td>91f713d52f85d41a</td></tr><tr><td>ext_source_range</td><td>EXT_SOURCE_2</td><td>1.5</td><td>6d88dca381ee7fa2</td></tr><tr><td>ext_source_range</td><td>EXT_SOURCE_2</td><td>1.5</td><td>ceab1b199ceeae98</td></tr><tr><td>domain_NAME_CONTRACT_TYPE</td><td>NAME_CONTRACT_TYPE</td><td>Consumer loans</td><td>963e38afbff06b3e</td></tr><tr><td>domain_NAME_CONTRACT_TYPE</td><td>NAME_CONTRACT_TYPE</td><td>Consumer loans</td><td>7c12a2cea192e387</td></tr><tr><td>domain_NAME_CONTRACT_TYPE</td><td>NAME_CONTRACT_TYPE</td><td>Consumer loans</td><td>c9571d40eb84540e</td></tr><tr><td>domain_NAME_CONTRACT_TYPE</td><td>NAME_CONTRACT_TYPE</td><td>Consumer loans</td><td>2880e5195869c54c</td></tr><tr><td>credit_positive</td><td>AMT_CREDIT</td><td>-843044.375</td><td>0400fe8f3b833035</td></tr><tr><td>credit_positive</td><td>AMT_CREDIT</td><td>-1077991.25</td><td>16d8949a22e8218d</td></tr><tr><td>client_key_unique</td><td>client_key</td><td>fe16d2e6c60e2bd3</td><td>fe16d2e6c60e2bd3</td></tr><tr><td>client_key_unique</td><td>client_key</td><td>3404612b75444f6d</td><td>3404612b75444f6d</td></tr><tr><td>client_key_unique</td><td>client_key</td><td>bfaf3b789bd792a6</td><td>bfaf3b789bd792a6</td></tr><tr><td>client_key_unique</td><td>client_key</td><td>ced98a5005a1d2ba</td><td>ced98a5005a1d2ba</td></tr><tr><td>client_key_unique</td><td>client_key</td><td>ced98a5005a1d2ba</td><td>ced98a5005a1d2ba</td></tr><tr><td>client_key_unique</td><td>client_key</td><td>bfaf3b789bd792a6</td><td>bfaf3b789bd792a6</td></tr><tr><td>client_key_unique</td><td>client_key</td><td>c027a421c866b602</td><td>c027a421c866b602</td></tr><tr><td>client_key_unique</td><td>client_key</td><td>3404612b75444f6d</td><td>3404612b75444f6d</td></tr><tr><td>client_key_unique</td><td>client_key</td><td>c027a421c866b602</td><td>c027a421c866b602</td></tr><tr><td>credit_positive</td><td>AMT_CREDIT</td><td>-296505.0</td><td>8fae5e537165a1f1</td></tr><tr><td>income_not_null</td><td>AMT_INCOME_TOTAL</td><td>nulo</td><td>6ae46c38220f1f89</td></tr><tr><td>income_not_null</td><td>AMT_INCOME_TOTAL</td><td>nulo</td><td>517469bccd1c6846</td></tr><tr><td>income_not_null</td><td>AMT_INCOME_TOTAL</td><td>nulo</td><td>f7329d51502be8a7</td></tr><tr><td>income_not_null</td><td>AMT_INCOME_TOTAL</td><td>nulo</td><td>d4abbe9fa9861054</td></tr><tr><td>income_not_null</td><td>AMT_INCOME_TOTAL</td><td>nulo</td><td>d93d68903d963a8f</td></tr><tr><td>credit_positive</td><td>AMT_CREDIT</td><td>-345510.0</td><td>7b6ae748b78b8d70</td></tr><tr><td>domain_NAME_CONTRACT_TYPE</td><td>NAME_CONTRACT_TYPE</td><td>Consumer loans</td><td>8df8bef6873738a4</td></tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Falhas do contrato de dados - lote raw_reference</title>
+<style>
+body { font-family: sans-serif; margin: 2rem; }
+table { border-collapse: collapse; margin-bottom: 2rem; }
+th, td { border: 1px solid #ccc; padding: 4px 10px; text-align: left; }
+th { background: #f0f0f0; }
+</style>
+</head>
+<body>
+<h1>Contrato de dados - lote raw_reference</h1>
+<p>Situacao: <strong>BLOQUEADO</strong> | versao do contrato: 1.0
+| linhas no lote: 307511</p>
+<h2>Violacoes por regra</h2>
+<table>
+<tr><th>Regra</th><th>Ocorrencias</th></tr>
+<tr><td>annuity_not_null</td><td>12</td></tr><tr><td>domain_CODE_GENDER</td><td>4</td></tr><tr><td>income_range</td><td>3</td></tr>
+</table>
+<h2>Amostra de falhas (ate 500 linhas)</h2>
+<table>
+<tr><th>Regra</th><th>Coluna</th><th>Valor ofensor</th><th>client_key</th></tr>
+<tr><td>income_range</td><td>AMT_INCOME_TOTAL</td><td>117000000.0</td><td>4b2545f8fb5ed641</td></tr><tr><td>annuity_not_null</td><td>AMT_ANNUITY</td><td>nulo</td><td>cae183a013b096e1</td></tr><tr><td>domain_CODE_GENDER</td><td>CODE_GENDER</td><td>XNA</td><td>f89769a866a300e5</td></tr><tr><td>domain_CODE_GENDER</td><td>CODE_GENDER</td><td>XNA</td><td>c1d4919be8e19bbf</td></tr><tr><td>domain_CODE_GENDER</td><td>CODE_GENDER</td><td>XNA</td><td>89c66ea1496caae9</td></tr><tr><td>annuity_not_null</td><td>AMT_ANNUITY</td><td>nulo</td><td>0cae0b1063512ebc</td></tr><tr><td>annuity_not_null</td><td>AMT_ANNUITY</td><td>nulo</td><td>5b36314e6f430ddb</td></tr><tr><td>annuity_not_null</td><td>AMT_ANNUITY</td><td>nulo</td><td>c932af2f9b96c8a5</td></tr><tr><td>annuity_not_null</td><td>AMT_ANNUITY</td><td>nulo</td><td>ff9968b106bce5fd</td></tr><tr><td>annuity_not_null</td><td>AMT_ANNUITY</td><td>nulo</td><td>41cd0834321fa701</td></tr><tr><td>income_range</td><td>AMT_INCOME_TOTAL</td><td>18000090.0</td><td>c2cd6880ca80ea6f</td></tr><tr><td>annuity_not_null</td><td>AMT_ANNUITY</td><td>nulo</td><td>0ef91121efe7005e</td></tr><tr><td>annuity_not_null</td><td>AMT_ANNUITY</td><td>nulo</td><td>41ab015b9b42a54d</td></tr><tr><td>annuity_not_null</td><td>AMT_ANNUITY</td><td>nulo</td><td>7dc405220c25e854</td></tr><tr><td>annuity_not_null</td><td>AMT_ANNUITY</td><td>nulo</td><td>27e748f5e3a3b57a</td></tr><tr><td>annuity_not_null</td><td>AMT_ANNUITY</td><td>nulo</td><td>1870fcfb3b078fbf</td></tr><tr><td>annuity_not_null</td><td>AMT_ANNUITY</td><td>nulo</td><td>bac666b7e1c44ffc</td></tr><tr><td>income_range</td><td>AMT_INCOME_TOTAL</td><td>13500000.0</td><td>d2cb2424d7090fba</td></tr><tr><td>domain_CODE_GENDER</td><td>CODE_GENDER</td><td>XNA</td><td>ec27a0b0ea085543</td></tr>
+</table>
+</body>
+</html>

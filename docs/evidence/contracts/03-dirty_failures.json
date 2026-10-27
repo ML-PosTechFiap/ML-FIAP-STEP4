@@ -1,0 +1,226 @@
+{
+  "contract_version": "1.0",
+  "batch_id": "03-dirty",
+  "passed": false,
+  "n_rows": 20000,
+  "violations": {
+    "client_key_unique": 10,
+    "ext_source_range": 5,
+    "age_range": 5,
+    "credit_positive": 5,
+    "domain_NAME_CONTRACT_TYPE": 5,
+    "income_not_null": 5
+  },
+  "failures": [
+    {
+      "rule": "client_key_unique",
+      "column": "client_key",
+      "failure_value": "fe16d2e6c60e2bd3",
+      "client_key": "fe16d2e6c60e2bd3"
+    },
+    {
+      "rule": "ext_source_range",
+      "column": "EXT_SOURCE_2",
+      "failure_value": "1.5",
+      "client_key": "4912c4a078951a1c"
+    },
+    {
+      "rule": "age_range",
+      "column": "DAYS_BIRTH",
+      "failure_value": "-5478.75",
+      "client_key": "6babc856f6fc7d8e"
+    },
+    {
+      "rule": "age_range",
+      "column": "DAYS_BIRTH",
+      "failure_value": "-5478.75",
+      "client_key": "41b4a0d5aca0a0f0"
+    },
+    {
+      "rule": "age_range",
+      "column": "DAYS_BIRTH",
+      "failure_value": "-5478.75",
+      "client_key": "f5e2320480a5f707"
+    },
+    {
+      "rule": "age_range",
+      "column": "DAYS_BIRTH",
+      "failure_value": "-5478.75",
+      "client_key": "5aa0ffe19cedd3c0"
+    },
+    {
+      "rule": "age_range",
+      "column": "DAYS_BIRTH",
+      "failure_value": "-5478.75",
+      "client_key": "5ba0ed38c9dc41bf"
+    },
+    {
+      "rule": "ext_source_range",
+      "column": "EXT_SOURCE_2",
+      "failure_value": "1.5",
+      "client_key": "f9def755f23bbaf9"
+    },
+    {
+      "rule": "ext_source_range",
+      "column": "EXT_SOURCE_2",
+      "failure_value": "1.5",
+      "client_key": "2116733c4d43bf51"
+    },
+    {
+      "rule": "credit_positive",
+      "column": "AMT_CREDIT",
+      "failure_value": "-599544.0",
+      "client_key": "91f713d52f85d41a"
+    },
+    {
+      "rule": "ext_source_range",
+      "column": "EXT_SOURCE_2",
+      "failure_value": "1.5",
+      "client_key": "6d88dca381ee7fa2"
+    },
+    {
+      "rule": "ext_source_range",
+      "column": "EXT_SOURCE_2",
+      "failure_value": "1.5",
+      "client_key": "ceab1b199ceeae98"
+    },
+    {
+      "rule": "domain_NAME_CONTRACT_TYPE",
+      "column": "NAME_CONTRACT_TYPE",
+      "failure_value": "Consumer loans",
+      "client_key": "963e38afbff06b3e"
+    },
+    {
+      "rule": "domain_NAME_CONTRACT_TYPE",
+      "column": "NAME_CONTRACT_TYPE",
+      "failure_value": "Consumer loans",
+      "client_key": "7c12a2cea192e387"
+    },
+    {
+      "rule": "domain_NAME_CONTRACT_TYPE",
+      "column": "NAME_CONTRACT_TYPE",
+      "failure_value": "Consumer loans",
+      "client_key": "c9571d40eb84540e"
+    },
+    {
+      "rule": "domain_NAME_CONTRACT_TYPE",
+      "column": "NAME_CONTRACT_TYPE",
+      "failure_value": "Consumer loans",
+      "client_key": "2880e5195869c54c"
+    },
+    {
+      "rule": "credit_positive",
+      "column": "AMT_CREDIT",
+      "failure_value": "-843044.375",
+      "client_key": "0400fe8f3b833035"
+    },
+    {
+      "rule": "credit_positive",
+      "column": "AMT_CREDIT",
+      "failure_value": "-1077991.25",
+      "client_key": "16d8949a22e8218d"
+    },
+    {
+      "rule": "client_key_unique",
+      "column": "client_key",
+      "failure_value": "fe16d2e6c60e2bd3",
+      "client_key": "fe16d2e6c60e2bd3"
+    },
+    {
+      "rule": "client_key_unique",
+      "column": "client_key",
+      "failure_value": "3404612b75444f6d",
+      "client_key": "3404612b75444f6d"
+    },
+    {
+      "rule": "client_key_unique",
+      "column": "client_key",
+      "failure_value": "bfaf3b789bd792a6",
+      "client_key": "bfaf3b789bd792a6"
+    },
+    {
+      "rule": "client_key_unique",
+      "column": "client_key",
+      "failure_value": "ced98a5005a1d2ba",
+      "client_key": "ced98a5005a1d2ba"
+    },
+    {
+      "rule": "client_key_unique",
+      "column": "client_key",
+      "failure_value": "ced98a5005a1d2ba",
+      "client_key": "ced98a5005a1d2ba"
+    },
+    {
+      "rule": "client_key_unique",
+      "column": "client_key",
+      "failure_value": "bfaf3b789bd792a6",
+      "client_key": "bfaf3b789bd792a6"
+    },
+    {
+      "rule": "client_key_unique",
+      "column": "client_key",
+      "failure_value": "c027a421c866b602",
+      "client_key": "c027a421c866b602"
+    },
+    {
+      "rule": "client_key_unique",
+      "column": "client_key",
+      "failure_value": "3404612b75444f6d",
+      "client_key": "3404612b75444f6d"
+    },
+    {
+      "rule": "client_key_unique",
+      "column": "client_key",
+      "failure_value": "c027a421c866b602",
+      "client_key": "c027a421c866b602"
+    },
+    {
+      "rule": "credit_positive",
+      "column": "AMT_CREDIT",
+      "failure_value": "-296505.0",
+      "client_key": "8fae5e537165a1f1"
+    },
+    {
+      "rule": "income_not_null",
+      "column": "AMT_INCOME_TOTAL",
+      "failure_value": "nulo",
+      "client_key": "6ae46c38220f1f89"
+    },
+    {
+      "rule": "income_not_null",
+      "column": "AMT_INCOME_TOTAL",
+      "failure_value": "nulo",
+      "client_key": "517469bccd1c6846"
+    },
+    {
+      "rule": "income_not_null",
+      "column": "AMT_INCOME_TOTAL",
+      "failure_value": "nulo",
+      "client_key": "f7329d51502be8a7"
+    },
+    {
+      "rule": "income_not_null",
+      "column": "AMT_INCOME_TOTAL",
+      "failure_value": "nulo",
+      "client_key": "d4abbe9fa9861054"
+    },
+    {
+      "rule": "income_not_null",
+      "column": "AMT_INCOME_TOTAL",
+      "failure_value": "nulo",
+      "client_key": "d93d68903d963a8f"
+    },
+    {
+      "rule": "credit_positive",
+      "column": "AMT_CREDIT",
+      "failure_value": "-345510.0",
+      "client_key": "7b6ae748b78b8d70"
+    },
+    {
+      "rule": "domain_NAME_CONTRACT_TYPE",
+      "column": "NAME_CONTRACT_TYPE",
+      "failure_value": "Consumer loans",
+      "client_key": "8df8bef6873738a4"
+    }
+  ]
+}

@@ -1,0 +1,230 @@
+{
+  "batch_id": "05",
+  "labeled": true,
+  "features": [
+    {
+      "feature": "AMT_INCOME_TOTAL",
+      "kind": "numeric",
+      "psi": 0.2470798347956218,
+      "ks": 0.13270618789521227,
+      "status": "drift"
+    },
+    {
+      "feature": "AMT_CREDIT",
+      "kind": "numeric",
+      "psi": 0.1440420124583411,
+      "ks": 0.09899467028003614,
+      "status": "atencao"
+    },
+    {
+      "feature": "AMT_ANNUITY",
+      "kind": "numeric",
+      "psi": 0.2092496939477067,
+      "ks": 0.1927601626016261,
+      "status": "drift"
+    },
+    {
+      "feature": "AMT_GOODS_PRICE",
+      "kind": "numeric",
+      "psi": 0.22193281339249685,
+      "ks": 0.14780424742123216,
+      "status": "drift"
+    },
+    {
+      "feature": "AGE_YEARS",
+      "kind": "numeric",
+      "psi": 0.14347827339432112,
+      "ks": 0.16748414634146344,
+      "status": "drift"
+    },
+    {
+      "feature": "YEARS_EMPLOYED",
+      "kind": "numeric",
+      "psi": 0.12549412170181162,
+      "ks": 0.13213311585927207,
+      "status": "drift"
+    },
+    {
+      "feature": "IS_UNEMPLOYED_OR_PENSIONER",
+      "kind": "numeric",
+      "psi": 0.05257607804999103,
+      "ks": 0.09623789521228543,
+      "status": "ok"
+    },
+    {
+      "feature": "CNT_CHILDREN",
+      "kind": "numeric",
+      "psi": 0.001649937485294828,
+      "ks": 0.014281029810298107,
+      "status": "ok"
+    },
+    {
+      "feature": "CNT_FAM_MEMBERS",
+      "kind": "numeric",
+      "psi": 0.004830895985206436,
+      "ks": 0.018163911472448058,
+      "status": "ok"
+    },
+    {
+      "feature": "EXT_SOURCE_1",
+      "kind": "numeric",
+      "psi": 0.03666746991528489,
+      "ks": 0.10448050043841206,
+      "status": "drift"
+    },
+    {
+      "feature": "EXT_SOURCE_2",
+      "kind": "numeric",
+      "psi": 0.6086095608346095,
+      "ks": 0.2049798697348284,
+      "status": "drift"
+    },
+    {
+      "feature": "EXT_SOURCE_3",
+      "kind": "numeric",
+      "psi": 0.2137495126342667,
+      "ks": 0.16478861243301723,
+      "status": "drift"
+    },
+    {
+      "feature": "CREDIT_INCOME_RATIO",
+      "kind": "numeric",
+      "psi": 0.008525810761819682,
+      "ks": 0.0440355916892502,
+      "status": "ok"
+    },
+    {
+      "feature": "ANNUITY_INCOME_RATIO",
+      "kind": "numeric",
+      "psi": 0.08189518385762824,
+      "ks": 0.1244912375790424,
+      "status": "drift"
+    },
+    {
+      "feature": "CREDIT_TERM",
+      "kind": "numeric",
+      "psi": 0.5138421864560268,
+      "ks": 0.22527199638663048,
+      "status": "drift"
+    },
+    {
+      "feature": "NAME_CONTRACT_TYPE",
+      "kind": "categorical",
+      "psi": 0.0011235675057161812,
+      "ks": null,
+      "status": "ok"
+    },
+    {
+      "feature": "NAME_INCOME_TYPE",
+      "kind": "categorical",
+      "psi": 0.9365592330118399,
+      "ks": null,
+      "status": "drift"
+    },
+    {
+      "feature": "NAME_EDUCATION_TYPE",
+      "kind": "categorical",
+      "psi": 0.005684836502540988,
+      "ks": null,
+      "status": "ok"
+    },
+    {
+      "feature": "NAME_FAMILY_STATUS",
+      "kind": "categorical",
+      "psi": 0.011930639874257413,
+      "ks": null,
+      "status": "ok"
+    },
+    {
+      "feature": "NAME_HOUSING_TYPE",
+      "kind": "categorical",
+      "psi": 0.012247097550889957,
+      "ks": null,
+      "status": "ok"
+    },
+    {
+      "feature": "FLAG_OWN_CAR",
+      "kind": "categorical",
+      "psi": 0.0006299134306180078,
+      "ks": null,
+      "status": "ok"
+    },
+    {
+      "feature": "FLAG_OWN_REALTY",
+      "kind": "categorical",
+      "psi": 0.0032859050334535303,
+      "ks": null,
+      "status": "ok"
+    }
+  ],
+  "drifted_features": [
+    "AGE_YEARS",
+    "AMT_ANNUITY",
+    "AMT_GOODS_PRICE",
+    "AMT_INCOME_TOTAL",
+    "ANNUITY_INCOME_RATIO",
+    "CREDIT_TERM",
+    "EXT_SOURCE_1",
+    "EXT_SOURCE_2",
+    "EXT_SOURCE_3",
+    "NAME_INCOME_TYPE",
+    "YEARS_EMPLOYED"
+  ],
+  "dataset_drift_share": 0.5,
+  "prediction_psi": 0.1632030495235685,
+  "performance": {
+    "auc": 0.5997583553457226,
+    "ks": 0.1443356904661553,
+    "default_rate_observed": 0.17435,
+    "mean_predicted_pd": 0.46206937871961856,
+    "calibration_ratio": 1.8470916925073484,
+    "calibration_ratio_raw": 0.3773242894457084,
+    "approval_rate": 0.48835
+  },
+  "fairness": {
+    "gender": 0.8611628542755891,
+    "age_band": 0.5456017540909391
+  },
+  "evidently": {
+    "data_drift": {
+      "html": "05_data_drift.html",
+      "json": "05_data_drift.json"
+    },
+    "performance": {
+      "html": "05_performance.html",
+      "json": "05_performance.json"
+    }
+  },
+  "psi": {
+    "AMT_INCOME_TOTAL": 0.014987788798163686,
+    "AMT_CREDIT": 0.08183663162064739,
+    "AMT_ANNUITY": 0.17245425333357742,
+    "AMT_GOODS_PRICE": 0.1306385447860889,
+    "AGE_YEARS": 0.15149076385292481,
+    "YEARS_EMPLOYED": 0.10136019610529065,
+    "IS_UNEMPLOYED_OR_PENSIONER": 0.0525956380278416,
+    "CNT_CHILDREN": 0.005253185194878149,
+    "CNT_FAM_MEMBERS": 0.008393018914305349,
+    "EXT_SOURCE_1": 0.05728446185741998,
+    "EXT_SOURCE_2": 0.5720992839915289,
+    "EXT_SOURCE_3": 0.3976547949834037,
+    "CREDIT_INCOME_RATIO": 0.013991300225379241,
+    "ANNUITY_INCOME_RATIO": 0.08617793173877045,
+    "CREDIT_TERM": 0.5080306094604516,
+    "score": 0.17126214493920908,
+    "NAME_CONTRACT_TYPE": 0.0011246148785881067,
+    "NAME_INCOME_TYPE": 1.1142787751536034,
+    "NAME_EDUCATION_TYPE": 0.005747618442318063,
+    "NAME_FAMILY_STATUS": 0.011941999055598881,
+    "NAME_HOUSING_TYPE": 0.012278598291748695,
+    "FLAG_OWN_CAR": 0.0006300665571690072,
+    "FLAG_OWN_REALTY": 0.0032867752977778506
+  },
+  "recommendation": "RETREINAR",
+  "recommendation_reasons": [
+    "AUC 0.600 caiu mais de 0.05 abaixo da referência (0.758).",
+    "Calibração: a razão observado/previsto é 1.85x a da referência (limite 1.3).",
+    "50% das features com drift (limite 30%).",
+    "Impacto disparato de age_band 0.55 (mínimo 0.8)."
+  ]
+}
