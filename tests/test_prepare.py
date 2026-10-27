@@ -1,4 +1,5 @@
 import json
+import subprocess
 
 import pandas as pd
 import pytest
@@ -74,6 +75,40 @@ def test_existing_dataset_short_circuits(tmp_path, monkeypatch):
     csv.parent.mkdir(parents=True)
     csv.write_text("SK_ID_CURR\n1\n")
     assert ensure_dataset(_settings(tmp_path)) == csv
+
+
+def _kaggle_env(monkeypatch):
+    monkeypatch.setenv("KAGGLE_USERNAME", "u")
+    monkeypatch.setenv("KAGGLE_KEY", "k")
+
+
+def test_kaggle_download_has_a_timeout_and_maps_it(tmp_path, monkeypatch):
+    from credit_monitor.data import download
+
+    _kaggle_env(monkeypatch)
+    seen = {}
+
+    def fake_run(cmd, **kwargs):
+        seen.update(kwargs)
+        raise subprocess.TimeoutExpired(cmd=cmd, timeout=kwargs["timeout"])
+
+    monkeypatch.setattr(download.subprocess, "run", fake_run)
+    with pytest.raises(download.DatasetUnavailable, match="application_train.csv"):
+        download.ensure_dataset(_settings(tmp_path))
+    assert seen["timeout"] == download.KAGGLE_TIMEOUT_SECONDS == 600
+
+
+def test_kaggle_corrupt_zip_becomes_dataset_unavailable(tmp_path, monkeypatch):
+    from credit_monitor.data import download
+
+    _kaggle_env(monkeypatch)
+
+    def fake_run(cmd, **kwargs):
+        (tmp_path / "raw" / "application_train.csv.zip").write_bytes(b"nao e um zip")
+
+    monkeypatch.setattr(download.subprocess, "run", fake_run)
+    with pytest.raises(download.DatasetUnavailable, match="application_train.csv"):
+        download.ensure_dataset(_settings(tmp_path))
 
 
 def test_prepare_command_without_dataset_returns_2(tmp_path, monkeypatch, capsys):

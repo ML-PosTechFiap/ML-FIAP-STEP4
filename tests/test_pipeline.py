@@ -207,6 +207,15 @@ def test_blocked_batch_publishes_contract_metrics(trained, recorded):
     assert stages == {"ingest", "contract"}  # predicao e drift nao rodam
     assert ("credit_model_auc", ()) not in pub.values()
 
+    # as series de referencia seguem publicadas: os paineis "vs referencia" nao ficam vazios
+    meta = json.loads((trained.models_dir / "metadata.json").read_text(encoding="utf-8"))
+    assert _metric(pub, "credit_model_auc_reference") == meta["reference_metrics"]["auc"]
+    assert _metric(pub, "credit_model_ks_reference") == meta["reference_metrics"]["ks"]
+    for attribute in ("gender", "age_band"):
+        assert _metric(pub, "credit_fairness_disparate_impact_reference", attribute=attribute) == (
+            meta["fairness"][attribute]["disparate_impact"]
+        )
+
     tracker = trackers[-1]
     assert tracker.tags["status"] == "blocked"
     assert "03-dirty_failures.json" in {p.name for p in tracker.artifacts}

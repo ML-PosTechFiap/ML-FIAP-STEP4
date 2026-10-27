@@ -11,6 +11,7 @@ from credit_monitor.config import Settings
 
 COMPETITION = "home-credit-default-risk"
 DATASET_FILE = "application_train.csv"
+KAGGLE_TIMEOUT_SECONDS = 600
 
 
 class DatasetUnavailable(RuntimeError):
@@ -42,8 +43,9 @@ def ensure_dataset(settings: Settings) -> Path:
     cmd = ["kaggle", "competitions", "download", "-c", COMPETITION, "-f", DATASET_FILE,
            "-p", str(raw_dir)]
     try:
-        subprocess.run(cmd, check=True, capture_output=True, text=True)
-    except (OSError, subprocess.CalledProcessError) as exc:
+        subprocess.run(cmd, check=True, capture_output=True, text=True,
+                       timeout=KAGGLE_TIMEOUT_SECONDS)
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
         detail = getattr(exc, "stderr", "") or str(exc)
         raise DatasetUnavailable(
             _unavailable_message(f"Falha ao baixar do Kaggle: {detail.strip()}")
@@ -51,8 +53,13 @@ def ensure_dataset(settings: Settings) -> Path:
 
     zip_path = raw_dir / f"{DATASET_FILE}.zip"
     if zip_path.exists():
-        with zipfile.ZipFile(zip_path) as archive:
-            archive.extract(DATASET_FILE, raw_dir)
+        try:
+            with zipfile.ZipFile(zip_path) as archive:
+                archive.extract(DATASET_FILE, raw_dir)
+        except (zipfile.BadZipFile, KeyError) as exc:
+            raise DatasetUnavailable(
+                _unavailable_message(f"O arquivo baixado do Kaggle está corrompido ({exc}).")
+            ) from exc
         zip_path.unlink()
     if not csv_path.exists():
         raise DatasetUnavailable(_unavailable_message("O download terminou sem gerar o arquivo."))

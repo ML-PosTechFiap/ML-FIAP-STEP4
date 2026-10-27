@@ -38,7 +38,7 @@ class Tracker:
             response = requests.get(f"{self.uri}/health", timeout=self.settings.http_timeout)
             response.raise_for_status()
         except Exception as exc:
-            self._log.warning("MLflow indisponivel (%s); rastreamento desativado.", type(exc).__name__)
+            self._log.warning("MLflow indisponível (%s); rastreamento desativado.", type(exc).__name__)
             return False
         return True
 

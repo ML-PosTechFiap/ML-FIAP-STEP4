@@ -25,3 +25,6 @@ jobs:
       - run: >
           docker run --rm -v "$PWD/infra/prometheus:/p" --entrypoint promtool
           prom/prometheus:v2.55.1 check rules /p/alerts.yml
+      - run: >
+          docker run --rm -v "$PWD/infra/prometheus:/p" --entrypoint promtool
+          prom/prometheus:v2.55.1 check config /p/prometheus.yml

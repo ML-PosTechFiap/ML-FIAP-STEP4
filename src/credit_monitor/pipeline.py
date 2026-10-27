@@ -84,8 +84,21 @@ def _publish_summary(publisher: MetricsPublisher, summary: dict, meta: dict) -> 
         )
 
     publisher.set("credit_monitor_recommendation", RECOMMENDATION_CODES[summary["recommendation"]])
+    _publish_references(publisher, meta)
+
+
+def _publish_references(publisher: MetricsPublisher, meta: dict) -> None:
+    """Series de referencia do modelo (AUC, KS e impacto disparato) a partir do metadata.
+
+    No caminho bloqueado nao ha resumo do lote, mas os paineis "vs referencia" do dashboard
+    leem estas series em `batch="latest"` e nao devem ficar vazios.
+    """
     publisher.set("credit_model_auc_reference", meta["reference_metrics"]["auc"])
     publisher.set("credit_model_ks_reference", meta["reference_metrics"]["ks"])
+    for attribute, report in (meta.get("fairness") or {}).items():
+        if isinstance(report, dict) and "disparate_impact" in report:
+            _set_number(publisher, "credit_fairness_disparate_impact_reference",
+                        report["disparate_impact"], attribute=attribute)
 
 
 def _mlflow_metrics(publisher: MetricsPublisher, summary: dict | None) -> dict[str, float]:
@@ -205,6 +218,7 @@ def _run(
     }
     if not validation.passed:
         publisher.set("credit_pipeline_peak_memory_bytes", peak_memory_bytes())
+        _publish_references(publisher, meta)
         _track(tracker, batch_id, {**tags, "status": "blocked", "recommendation": "n/a"},
                publisher, None, [*failure_files, _run_log_excerpt(settings, batch_id, run_id)])
         build_index(settings.reports_dir)

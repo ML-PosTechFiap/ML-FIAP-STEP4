@@ -8,7 +8,7 @@ down:
 	docker compose down
 
 test:
-	docker compose run --rm --entrypoint pytest pipeline
+	docker compose run --rm --no-deps --entrypoint pytest pipeline
 
 prepare:
 	docker compose run --rm pipeline prepare

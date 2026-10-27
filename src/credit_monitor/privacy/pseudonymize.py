@@ -10,11 +10,24 @@ import pandas as pd
 ID_COLUMN = "SK_ID_CURR"
 KEY_COLUMN = "client_key"
 KEY_LENGTH = 16
+# Valor publico de `.env.example`: quem o usa deixa as chaves reversiveis por forca bruta
+# (SK_ID_CURR e um inteiro pequeno), o que equivale a nao ter salt.
+PLACEHOLDER_SALT = "troque-este-valor"
+
+
+class InvalidSalt(ValueError):
+    """`PSEUDONYMIZATION_SALT` vazio ou igual ao valor público de exemplo."""
 
 
 def _require_salt(salt: str) -> None:
     if not salt:
-        raise ValueError("PSEUDONYMIZATION_SALT vazio: defina um salt no .env")
+        raise InvalidSalt("PSEUDONYMIZATION_SALT vazio: defina um salt secreto no .env")
+    if salt == PLACEHOLDER_SALT:
+        raise InvalidSalt(
+            f"PSEUDONYMIZATION_SALT ainda é o valor de exemplo ({PLACEHOLDER_SALT!r}), "
+            "público no repositório: as chaves seriam reversíveis. Gere um salt próprio com "
+            '`python -c "import secrets; print(secrets.token_hex(32))"` e grave no .env.'
+        )
 
 
 def _key(raw_id: object, salt: str) -> str | None:

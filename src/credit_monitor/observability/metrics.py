@@ -19,45 +19,45 @@ METRIC_CATALOG: dict[str, tuple[str, list[str]]] = {
         "Status da etapa: 1 sucesso, 0 erro, -1 bloqueado pelo contrato",
         ["stage"],
     ),
-    "credit_pipeline_stage_duration_seconds": ("Duracao da etapa em segundos", ["stage"]),
+    "credit_pipeline_stage_duration_seconds": ("Duração da etapa em segundos", ["stage"]),
     "credit_pipeline_rows_processed": ("Linhas processadas (saida) pela etapa", ["stage"]),
     "credit_pipeline_last_success_timestamp": (
-        "Timestamp Unix da ultima execucao concluida com sucesso",
+        "Timestamp Unix da última execução concluída com sucesso",
         [],
     ),
-    "credit_pipeline_peak_memory_bytes": ("Memoria de pico do pipeline em bytes", []),
+    "credit_pipeline_peak_memory_bytes": ("Memória de pico do pipeline em bytes", []),
     "credit_batch_info": ("Lote publicado no grupo latest (valor sempre 1)", ["batch_id"]),
     # Qualidade
     "credit_contract_passed": ("Contrato de dados: 1 passou, 0 violado", []),
-    "credit_contract_violations": ("Violacoes do contrato de dados por regra", ["rule"]),
+    "credit_contract_violations": ("Violações do contrato de dados por regra", ["rule"]),
     # Drift
-    "credit_feature_psi": ("PSI da feature vs referencia", ["feature"]),
-    "credit_feature_ks": ("Estatistica KS da feature vs referencia", ["feature"]),
-    "credit_dataset_drift_share": ("Fracao de features com drift", []),
-    "credit_prediction_psi": ("PSI do score vs referencia", []),
+    "credit_feature_psi": ("PSI da feature vs referência", ["feature"]),
+    "credit_feature_ks": ("Estatística KS da feature vs referência", ["feature"]),
+    "credit_dataset_drift_share": ("Fração de features com drift", []),
+    "credit_prediction_psi": ("PSI do score vs referência", []),
     # Modelo
     "credit_model_auc": ("AUC do modelo no lote", []),
     "credit_model_ks": ("KS do modelo no lote", []),
-    "credit_default_rate_observed": ("Taxa de inadimplencia observada no lote", []),
+    "credit_default_rate_observed": ("Taxa de inadimplência observada no lote", []),
     "credit_mean_predicted_pd": ("PD media prevista no lote", []),
     "credit_calibration_ratio": (
-        "Inadimplencia observada / PD media prevista, relativa a referencia (1,0 = igual a referencia)",
+        "Inadimplência observada / PD média prevista, relativa à referência (1,0 = igual à referência)",
         [],
     ),
-    "credit_approval_rate": ("Taxa de aprovacao no lote", []),
+    "credit_approval_rate": ("Taxa de aprovação no lote", []),
     "credit_monitor_recommendation": (
-        "Recomendacao do monitor: 0 OK, 1 investigar, 2 retreinar",
+        "Recomendação do monitor: 0 OK, 1 investigar, 2 retreinar",
         [],
     ),
-    "credit_model_auc_reference": ("AUC do modelo na base de referencia", []),
-    "credit_model_ks_reference": ("KS do modelo na base de referencia", []),
+    "credit_model_auc_reference": ("AUC do modelo na base de referência", []),
+    "credit_model_ks_reference": ("KS do modelo na base de referência", []),
     # Vies
     "credit_fairness_disparate_impact": (
-        "Impacto disparato da aprovacao por atributo",
+        "Impacto disparato da aprovação por atributo",
         ["attribute"],
     ),
     "credit_fairness_disparate_impact_reference": (
-        "Impacto disparato da aprovacao por atributo na base de referencia",
+        "Impacto disparato da aprovação por atributo na base de referência",
         ["attribute"],
     ),
 }
@@ -85,7 +85,7 @@ class MetricsPublisher:
 
     def set(self, name: str, value: float, **labels: Any) -> None:
         if name not in METRIC_CATALOG:
-            raise KeyError(f"Metrica fora do catalogo: {name}")
+            raise KeyError(f"Métrica fora do catálogo: {name}")
         description, label_names = METRIC_CATALOG[name]
         if set(labels) != set(label_names):
             raise ValueError(
@@ -107,7 +107,7 @@ class MetricsPublisher:
         url = self.settings.pushgateway_url
         if not url:
             self._log.warning(
-                "Pushgateway nao configurado; metricas nao foram publicadas.",
+                "Pushgateway não configurado; métricas não foram publicadas.",
                 extra={"batch_id": self.batch_id},
             )
             return False
@@ -121,7 +121,7 @@ class MetricsPublisher:
                     grouping_key={"batch": group},
                     timeout=self.settings.http_timeout,
                 )
-        except Exception as exc:  # metricas nunca derrubam o pipeline
+        except Exception as exc:  # métricas nunca derrubam o pipeline
             self._log.warning(
                 "Falha ao publicar no Pushgateway (%s): %s",
                 type(exc).__name__,

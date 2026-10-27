@@ -69,7 +69,7 @@ class LokiHandler(logging.Handler):
         except Exception as exc:  # qualquer falha desativa o handler
             self.disabled = True
             print(
-                f"AVISO: Loki indisponivel ({type(exc).__name__}); "
+                f"AVISO: Loki indisponível ({type(exc).__name__}); "
                 "envio de logs ao Loki desativado.",
                 file=sys.stderr,
             )

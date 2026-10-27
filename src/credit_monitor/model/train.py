@@ -77,6 +77,13 @@ def _fit(pipeline: Pipeline, X_train, y_train, X_valid, y_valid) -> None:
 
 def _load_splits(settings: Settings) -> dict[str, pd.DataFrame]:
     ref_dir = settings.data_dir / "reference"
+    needed = [ref_dir / "domains.json", *(ref_dir / f"{name}.parquet" for name in SPLITS)]
+    missing = [path.name for path in needed if not path.exists()]
+    if missing:
+        raise RuntimeError(
+            f"Referência não encontrada em {ref_dir} (faltam: {', '.join(missing)}). "
+            "Execute `prepare` antes de `train`."
+        )
     domains = json.loads((ref_dir / "domains.json").read_text(encoding="utf-8"))
     frames = {name: pd.read_parquet(ref_dir / f"{name}.parquet") for name in SPLITS}
     for name, frame in frames.items():

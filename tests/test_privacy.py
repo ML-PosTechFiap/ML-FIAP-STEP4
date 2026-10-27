@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from credit_monitor.privacy.pseudonymize import client_key, pseudonymize
+from credit_monitor.privacy.pseudonymize import PLACEHOLDER_SALT, client_key, pseudonymize
 
 
 def test_deterministic_and_salted():
@@ -32,6 +32,22 @@ def test_empty_salt_is_rejected():
         client_key(1, "")
     with pytest.raises(ValueError, match="PSEUDONYMIZATION_SALT"):
         pseudonymize(pd.DataFrame({"SK_ID_CURR": [1]}), "")
+
+
+def test_placeholder_salt_is_rejected():
+    assert PLACEHOLDER_SALT == "troque-este-valor"
+    with pytest.raises(ValueError, match="secrets.token_hex"):
+        client_key(1, PLACEHOLDER_SALT)
+    with pytest.raises(ValueError, match=PLACEHOLDER_SALT):
+        pseudonymize(pd.DataFrame({"SK_ID_CURR": [1]}), PLACEHOLDER_SALT)
+
+
+def test_env_example_ships_the_placeholder_the_guard_rejects():
+    from pathlib import Path
+
+    example = Path(__file__).resolve().parents[1] / ".env.example"
+    if example.exists():  # a imagem de testes nao copia arquivos ocultos
+        assert f"PSEUDONYMIZATION_SALT={PLACEHOLDER_SALT}" in example.read_text(encoding="utf-8")
 
 
 def test_pseudonymize_drops_raw_id():

@@ -12,6 +12,7 @@ from credit_monitor.config import Settings
 from credit_monitor.data.download import DatasetUnavailable, ensure_dataset
 from credit_monitor.data.prepare import run_prepare
 from credit_monitor.model.train import run_train
+from credit_monitor.privacy.pseudonymize import InvalidSalt
 from credit_monitor.privacy.retention import purge
 
 Command = Callable[[Settings, argparse.Namespace], int]
@@ -49,7 +50,7 @@ def _download(settings: Settings, args: argparse.Namespace) -> int:
 def _prepare(settings: Settings, args: argparse.Namespace) -> int:
     try:
         paths = run_prepare(settings, synthetic=args.synthetic, n=args.n)
-    except DatasetUnavailable as exc:
+    except (DatasetUnavailable, RuntimeError) as exc:  # DatasetUnavailable e um RuntimeError
         print(exc)
         return 2
     sizes = {name: pq.ParquetFile(paths[name]).metadata.num_rows
@@ -215,4 +216,8 @@ def main(argv: list[str] | None = None) -> int:
         args = parser.parse_args(argv)
     except SystemExit as exc:
         return exc.code if isinstance(exc.code, int) else 2
-    return COMMANDS[args.command](Settings.from_env(), args)
+    try:
+        return COMMANDS[args.command](Settings.from_env(), args)
+    except InvalidSalt as exc:  # erro de configuração: mensagem clara, sem stack trace
+        print(exc)
+        return 2

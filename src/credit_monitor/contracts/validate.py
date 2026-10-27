@@ -136,14 +136,14 @@ th {{ background: #f0f0f0; }}
 </head>
 <body>
 <h1>Contrato de dados - lote {esc(batch_id)}</h1>
-<p>Situacao: <strong>{status}</strong> | versao do contrato: {CONTRACT_VERSION}
+<p>Situação: <strong>{status}</strong> | versão do contrato: {CONTRACT_VERSION}
 | linhas no lote: {result.n_rows}</p>
-<h2>Violacoes por regra</h2>
+<h2>Violações por regra</h2>
 <table>
-<tr><th>Regra</th><th>Ocorrencias</th></tr>
+<tr><th>Regra</th><th>Ocorrências</th></tr>
 {rules}
 </table>
-<h2>Amostra de falhas (ate {MAX_REPORT_ROWS} linhas)</h2>
+<h2>Amostra de falhas (até {MAX_REPORT_ROWS} linhas)</h2>
 <table>
 <tr><th>Regra</th><th>Coluna</th><th>Valor ofensor</th><th>client_key</th></tr>
 {rows}
@@ -177,5 +177,5 @@ def quarantine(src: Path, batch_id: str, settings: Settings) -> Path:
     dest_dir = settings.data_dir / "quarantine"
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest = dest_dir / f"{batch_id}.parquet"
-    shutil.copy2(src, dest)
+    shutil.copyfile(src, dest)  # sem copiar o mtime: o prazo de retenção começa agora
     return dest

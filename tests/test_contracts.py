@@ -175,6 +175,20 @@ def test_quarantine_copies_and_keeps_source(tmp_path):
     assert quarantine(src, "03-dirty", s) == dest
 
 
+def test_quarantine_copy_starts_its_own_retention_clock(tmp_path):
+    import os
+    import time
+
+    s = _settings(tmp_path)
+    src = tmp_path / "batches" / "03-dirty.parquet"
+    src.parent.mkdir()
+    pd.DataFrame({"a": [1]}).to_parquet(src)
+    old = time.time() - 60 * 86400  # lote gerado ha 60 dias
+    os.utime(src, (old, old))
+    dest = quarantine(src, "03-dirty", s)
+    assert dest.stat().st_mtime > time.time() - 60
+
+
 def test_mixed_frame_and_row_failures_map_client_key(valid):
     df, dom = valid
     small = df.head(10).assign(AMT_CREDIT=lambda d: d.AMT_CREDIT.where(d.index != 4, -1))
