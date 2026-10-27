@@ -127,9 +127,9 @@ Leitura pelo DAG: as `EXT_SOURCE` (canal digital, perfil jovem com histórico cu
 parte do deslocamento do score; `YEARS_EMPLOYED` vem do ramo desaceleração, desemprego. As features `AMT_*`
 não são irrelevantes: o top 5 só ordena quem mais recupera o PSI do score quando restaurado sozinho
 (`AMT_CREDIT` é o 5º, 14,8%, com recuperação de AUC negativa, -0,0066; `AMT_ANNUITY` vem logo atrás, 14,6%).
-Recuperação de PSI **negativa** não é ruído, é cancelamento: restaurar sozinha `AMT_GOODS_PRICE` (-23,7%, PSI
-do score vai a 0,369) ou `AGE_YEARS` (-15,8%, vai a 0,346) piora o PSI do score, porque os deslocamentos se
-compensam parcialmente e desfazer só um deles desfaz parte do cancelamento. A renda sozinha recupera 0,8%. Nenhuma ablação recupera a calibração nem o AUC de forma relevante
+Recuperação de PSI **negativa** não é ruído; é consistente com deslocamentos que se compensam parcialmente:
+restaurar sozinha `AMT_GOODS_PRICE` (-23,7%, PSI do score vai a 0,369) ou `AGE_YEARS` (-15,8%, vai a 0,346)
+piora o PSI do score, e desfazer só um deslocamento desfaz parte do cancelamento (a ablação não identifica o mecanismo). A renda sozinha recupera 0,8%. Nenhuma ablação recupera a calibração nem o AUC de forma relevante
 (calibração permanece em 2,2–2,4x): o estrago principal está no concept drift (rótulos), não nas
 covariáveis, o que justifica o retreino com dados recentes. |SHAP| médio, referência vs `06`: queda de
 `EXT_SOURCE_2` (0,377 para 0,267), `EXT_SOURCE_3` (0,382 para 0,327) e `EXT_SOURCE_1` (0,189 para 0,162);

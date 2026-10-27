@@ -1,15 +1,15 @@
 # Roteiro do vídeo (STAR, até 5:00)
 
-Quatro blocos cronometrados que somam exatamente 5:00. Cada bloco traz a fala, o comando exato (PowerShell,
+Quatro blocos cronometrados que somam 4:50 (folga de 10 s sobre o limite de 5:00). Cada bloco traz a fala, o comando exato (PowerShell,
 na raiz do repositório) e o painel ou URL a mostrar. Números de referência: dataset real do Home Credit
 (`docs/evidence/RESULTADOS.md`).
 
 | Bloco | Tempo | Duração | Tema |
 |---|---|---|---|
-| **S**ituação | 0:00 a 0:40 | 40 s | Degradação silenciosa |
-| **T**arefa | 0:40 a 1:10 | 30 s | Os três requisitos (mais a governança) |
-| **A**ção | 1:10 a 3:30 | 2:20 | Contrato ao vivo, simulação, heatmap de PSI, plano LGPD |
-| **R**esultado | 3:30 a 5:00 | 1:30 | Relatório do Evidently, alertas, causal e lições |
+| **S**ituação | 0:00 a 0:35 | 35 s | Degradação silenciosa |
+| **T**arefa | 0:35 a 1:05 | 30 s | Os três requisitos (mais a governança) |
+| **A**ção | 1:05 a 3:25 | 2:20 | Contrato ao vivo, simulação, heatmap de PSI, plano LGPD |
+| **R**esultado | 3:25 a 4:50 | 1:25 | Relatório do Evidently, alertas, causal e lições |
 
 ## Antes de gravar (preparo, fora do vídeo)
 
@@ -37,7 +37,7 @@ máquina, rode antes um `simulate-all` completo e o `causal`.
 
 ---
 
-## S: Situação (0:00 a 0:40)
+## S: Situação (0:00 a 0:35)
 
 **Mostrar:** slide com o título ou o dashboard do Grafana vazio, sem lotes.
 
@@ -54,7 +54,7 @@ máquina, rode antes um `simulate-all` completo e o `causal`.
 
 ---
 
-## T: Tarefa (0:40 a 1:10)
+## T: Tarefa (0:35 a 1:05)
 
 **Mostrar:** diagrama da arquitetura do README (seção 2) ou a lista abaixo na tela.
 
@@ -69,9 +69,9 @@ máquina, rode antes um `simulate-all` completo e o `causal`.
 
 ---
 
-## A: Ação (1:10 a 3:30)
+## A: Ação (1:05 a 3:25)
 
-### A1. Contrato bloqueando o `03-dirty` ao vivo (1:10 a 1:50)
+### A1. Contrato bloqueando o `03-dirty` ao vivo (1:05 a 1:45)
 
 **Comando:**
 
@@ -90,7 +90,7 @@ docker compose run --rm pipeline monitor --batch 03-dirty
 **Fala:** "O lote chega sujo: renda nula, idade de 15 anos, IDs duplicados. O contrato bloqueia o lote
 inteiro, manda para a quarentena, e o modelo nem chega a ser executado. O alerta dispara em segundos."
 
-### A2. `simulate-all` com o Grafana aberto (1:50 a 2:50)
+### A2. `simulate-all` com o Grafana aberto (1:45 a 2:45)
 
 **Comando (segundo terminal):**
 
@@ -109,16 +109,16 @@ docker compose run --rm pipeline simulate-all --interval 20s
 **Fala:** "Seis meses simulados, com inflação, desemprego, perfil mais jovem e mudança no comportamento de
 pagamento. O mês 3 chega sujo uma vez, e o simulador segue em frente. Cada lote publica métricas e logs."
 
-### A3. Heatmap de PSI (2:50 a 3:10)
+### A3. Heatmap de PSI (2:45 a 3:05)
 
 **Mostrar:** painel **"PSI feature × lote"** (a matriz PSI no Grafana) e o painel **"Drift share e PSI
 do score"**.
 
-**Fala:** "Cada linha é uma feature, cada coluna um lote. A renda, o preço do bem e o `EXT_SOURCE_2` esquentam
+**Fala:** "Cada linha é uma feature, cada coluna um lote. No lote 02 esquentam o preço do bem e a renda; no 03, anuidade, prazo do crédito e tipo de renda; o EXT_SOURCE_2 só entra no 04, e no 05 já são 11 features. O drift share passa de 0,30 no lote 05 e chega a 59% no 06. Uso o tamanho do efeito do KS, não o p-valor, que satura com 20 mil linhas."
 primeiro. O drift share passa de 0,30 no lote 05 e chega a 59% no 06. Uso o tamanho do efeito do KS, não o
 p-valor, que satura com 20 mil linhas."
 
-### A4. Plano LGPD (3:10 a 3:30)
+### A4. Plano LGPD (3:05 a 3:25)
 
 **Mostrar:** README, seção 6 ("Governança e LGPD"): a tabela de privacy by design (cada medida com o arquivo
 que a implementa), a base legal e a tabela de retenção.
@@ -132,9 +132,9 @@ RIPD e o fluxo de incidentes."
 
 ---
 
-## R: Resultado (3:30 a 5:00)
+## R: Resultado (3:25 a 4:50)
 
-### R1. Relatório do Evidently do lote 06 (3:30 a 3:55)
+### R1. Relatório do Evidently do lote 06 (3:25 a 3:50)
 
 **Mostrar:** `docs/evidence/drift/06_data_drift.html` (relatório do Evidently) e a linha do `06` em
 `docs/evidence/index.html`.
@@ -144,7 +144,7 @@ RIPD e o fluxo de incidentes."
 AUC caiu de 0,7577 para 0,5833, e a calibração relativa é 2,16 vezes a da referência. Recomendação:
 retreinar."
 
-### R2. Alertas disparando (3:55 a 4:10)
+### R2. Alertas disparando (3:50 a 4:05)
 
 **Mostrar:** Prometheus `http://localhost:9090/alerts` (ou o painel "Alertas disparando" do Grafana): 12
 alertas, entre eles `FeatureDriftDetected` (8 features), `DatasetDriftDetected`, `PredictionDrift`,
@@ -152,7 +152,7 @@ alertas, entre eles `FeatureDriftDetected` (8 features), `DatasetDriftDetected`,
 
 **Fala:** "Doze alertas disparam no estado final, sem nenhuma notificação manual."
 
-### R3. Decomposição causal (4:10 a 4:35)
+### R3. Decomposição causal (4:05 a 4:30)
 
 **Comando (opcional, se não estiver pronto; já foi gerado no preparo):**
 
@@ -167,7 +167,7 @@ drift**. As `EXT_SOURCE` explicam a maior parte do deslocamento do score, mas ne
 nem a calibração. O estrago está nos rótulos. Isso só é causal porque a simulação controla o gerador dos
 dados."
 
-### R4. Lições aprendidas (4:35 a 5:00)
+### R4. Lições aprendidas (4:30 a 4:50)
 
 **Mostrar:** README, seção 9 (ou slide com os três pontos).
 
@@ -183,6 +183,6 @@ dados."
 
 ## Checklist final
 
-- [ ] Duração total de 5:00 ou menos (confira no editor).
+- [ ] Duração total de 4:50 (limite de 5:00; confira no editor).
 - [ ] Nenhum segredo à mostra: tampe o `.env` e a senha do Grafana.
 - [ ] Link do vídeo colado na seção 10 do README.

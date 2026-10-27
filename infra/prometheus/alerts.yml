@@ -55,7 +55,7 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Modelo descalibrado: PD prevista é {{ $value | printf \"%.2f\" }}x a inadimplência observada (limite 1,3x)."
+          summary: "Modelo descalibrado: inadimplência observada ÷ PD média prevista é {{ $value | printf \"%.2f\" }}x a da referência (limite 1,3x; 1,0 = igual à referência)."
 
       - alert: FairnessDegraded
         expr: >-

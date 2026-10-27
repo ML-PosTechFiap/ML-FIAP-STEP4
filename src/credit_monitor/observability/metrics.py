@@ -40,10 +40,13 @@ METRIC_CATALOG: dict[str, tuple[str, list[str]]] = {
     "credit_model_ks": ("KS do modelo no lote", []),
     "credit_default_rate_observed": ("Taxa de inadimplencia observada no lote", []),
     "credit_mean_predicted_pd": ("PD media prevista no lote", []),
-    "credit_calibration_ratio": ("Razao entre PD media prevista e inadimplencia observada", []),
+    "credit_calibration_ratio": (
+        "Inadimplencia observada / PD media prevista, relativa a referencia (1,0 = igual a referencia)",
+        [],
+    ),
     "credit_approval_rate": ("Taxa de aprovacao no lote", []),
     "credit_monitor_recommendation": (
-        "Recomendacao do monitor: 0 OK, 1 atencao, 2 retreinar",
+        "Recomendacao do monitor: 0 OK, 1 investigar, 2 retreinar",
         [],
     ),
     "credit_model_auc_reference": ("AUC do modelo na base de referencia", []),

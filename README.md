@@ -532,7 +532,7 @@ processo organizacional descrito aqui, não um serviço do projeto.
 | Confirmação e acesso | O `client_key` permite localizar o titular nos dados do sistema de origem | Dentro do pipeline só há pseudônimo; a ligação com a pessoa fica no sistema de origem |
 | Correção | Corrigir no sistema de origem; o próximo lote já reflete a correção | Lotes passados e relatórios agregados não são reescritos |
 | Anonimização, bloqueio ou eliminação de dados desnecessários ou excessivos | Minimização na entrada (`usecols`) e retenção executável (`purge`) | |
-| Eliminação | Pedido atendido em dados de proposta e quarentena | Pode ser negada quando houver obrigação legal ou regulatória de guarda, ou exercício regular de direitos (art. 16), e em agregados que não identificam o titular |
+| Eliminação | O direito pleno de eliminação (art. 18, VI) vale para tratamento baseado em consentimento, que não é o caso aqui. Aplicam-se o inciso IV (eliminação de dados desnecessários, excessivos ou tratados em desconformidade) e os limites do art. 16 | Conservação permitida para cumprimento de obrigação legal ou regulatória e para o exercício regular de direitos, e agregados que não identificam o titular ficam fora |
 | Portabilidade | Exportação dos dados do titular pelo sistema de origem | Não alcança modelos, métricas e relatórios agregados |
 | Informação sobre compartilhamento | Não há compartilhamento com terceiros no pipeline | O score externo (`EXT_SOURCE_*`) vem de terceiros, e isso consta do aviso de privacidade |
 | Revisão de decisão automatizada | Art. 20, acima | Segredos comercial e industrial |
@@ -676,13 +676,15 @@ O modelo perde as variáveis em que mais se apoia (as três `EXT_SOURCE`).
 
 - **As `EXT_SOURCE` explicam a maior parte do deslocamento do score.** Elas refletem o canal digital e o
   perfil jovem com histórico curto (DAG). `YEARS_EMPLOYED` vem do ramo desaceleração e desemprego.
-- **Recuperação de PSI negativa não é ruído: é cancelamento.** Restaurar sozinha a `AMT_GOODS_PRICE`
-  (recuperação de -23,7%, PSI do score vai a 0,369) ou a `AGE_YEARS` (-15,8%, PSI vai a 0,346) **piora** o
-  PSI do score, porque os deslocamentos das features se compensam parcialmente: desfazer só um deles
-  desfaz parte do cancelamento. Por isso a leitura de cada linha da ablação é "o que muda quando só esta
-  feature volta", e a soma das recuperações não é 100%. As variáveis `AMT_*` não são irrelevantes para o
-  score: o top 5 só ordena quem mais recupera o PSI quando restaurado sozinho. `AMT_ANNUITY` (14,6%) vem logo
-  atrás, e `AMT_GOODS_PRICE` e `AGE_YEARS` alteram bastante o PSI do score, só que no sentido de piorá-lo.
+- **Recuperação de PSI negativa não é ruído; é consistente com deslocamentos que se compensam
+  parcialmente.** Restaurar sozinha a `AMT_GOODS_PRICE` (recuperação de -23,7%, PSI do score vai a 0,369) ou
+  a `AGE_YEARS` (-15,8%, PSI vai a 0,346) **piora** o PSI do score. Esse padrão é o esperado se parte dos
+  deslocamentos das features se anulava no score, de modo que desfazer só um deles desfaz parte do
+  cancelamento (a ablação isolada mede o efeito, mas não identifica o mecanismo). Por isso a leitura de
+  cada linha é "o que muda quando só esta feature volta", e a soma das recuperações não é 100%. As variáveis
+  `AMT_*` não são irrelevantes para o score: o top 5 só ordena quem mais recupera o PSI quando restaurado
+  sozinho. `AMT_ANNUITY` (14,6%) vem logo atrás, e `AMT_GOODS_PRICE` e `AGE_YEARS` alteram bastante o PSI do
+  score, só que no sentido de piorá-lo.
 - **A ablação preserva a marginal, não a dependência.** O mapeamento de quantis restaura a distribuição de
   cada feature isoladamente, sem manter a correlação entre elas.
 - **O estrago principal está nos rótulos, não nas covariáveis.** Nenhuma ablação recupera a calibração nem
