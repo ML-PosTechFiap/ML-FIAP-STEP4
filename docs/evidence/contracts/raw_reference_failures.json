@@ -13,115 +13,115 @@
       "rule": "income_range",
       "column": "AMT_INCOME_TOTAL",
       "failure_value": "117000000.0",
-      "client_key": "4b2545f8fb5ed641"
+      "client_key": "99c3a441fe2890e0"
     },
     {
       "rule": "annuity_not_null",
       "column": "AMT_ANNUITY",
       "failure_value": "nulo",
-      "client_key": "cae183a013b096e1"
+      "client_key": "9dbbb19b6fc556d9"
     },
     {
       "rule": "domain_CODE_GENDER",
       "column": "CODE_GENDER",
       "failure_value": "XNA",
-      "client_key": "f89769a866a300e5"
+      "client_key": "ea4a92b53a1b4239"
     },
     {
       "rule": "domain_CODE_GENDER",
       "column": "CODE_GENDER",
       "failure_value": "XNA",
-      "client_key": "c1d4919be8e19bbf"
+      "client_key": "8cd8da63ceffdf5b"
     },
     {
       "rule": "domain_CODE_GENDER",
       "column": "CODE_GENDER",
       "failure_value": "XNA",
-      "client_key": "89c66ea1496caae9"
+      "client_key": "5cefdfff230e6cd1"
     },
     {
       "rule": "annuity_not_null",
       "column": "AMT_ANNUITY",
       "failure_value": "nulo",
-      "client_key": "0cae0b1063512ebc"
+      "client_key": "da9949d0259f857d"
     },
     {
       "rule": "annuity_not_null",
       "column": "AMT_ANNUITY",
       "failure_value": "nulo",
-      "client_key": "5b36314e6f430ddb"
+      "client_key": "0ecde63eb4bce0bd"
     },
     {
       "rule": "annuity_not_null",
       "column": "AMT_ANNUITY",
       "failure_value": "nulo",
-      "client_key": "c932af2f9b96c8a5"
+      "client_key": "d9d804fefd247ff4"
     },
     {
       "rule": "annuity_not_null",
       "column": "AMT_ANNUITY",
       "failure_value": "nulo",
-      "client_key": "ff9968b106bce5fd"
+      "client_key": "f9551229d9fd92d3"
     },
     {
       "rule": "annuity_not_null",
       "column": "AMT_ANNUITY",
       "failure_value": "nulo",
-      "client_key": "41cd0834321fa701"
+      "client_key": "d8b90945dab9c192"
     },
     {
       "rule": "income_range",
       "column": "AMT_INCOME_TOTAL",
       "failure_value": "18000090.0",
-      "client_key": "c2cd6880ca80ea6f"
+      "client_key": "56b48220707c1363"
     },
     {
       "rule": "annuity_not_null",
       "column": "AMT_ANNUITY",
       "failure_value": "nulo",
-      "client_key": "0ef91121efe7005e"
+      "client_key": "b9652edb9de0b4c1"
     },
     {
       "rule": "annuity_not_null",
       "column": "AMT_ANNUITY",
       "failure_value": "nulo",
-      "client_key": "41ab015b9b42a54d"
+      "client_key": "e9f5f5992e9fd1d0"
     },
     {
       "rule": "annuity_not_null",
       "column": "AMT_ANNUITY",
       "failure_value": "nulo",
-      "client_key": "7dc405220c25e854"
+      "client_key": "5555181d75f92dcb"
     },
     {
       "rule": "annuity_not_null",
       "column": "AMT_ANNUITY",
       "failure_value": "nulo",
-      "client_key": "27e748f5e3a3b57a"
+      "client_key": "b12e4ae7aa801bd0"
     },
     {
       "rule": "annuity_not_null",
       "column": "AMT_ANNUITY",
       "failure_value": "nulo",
-      "client_key": "1870fcfb3b078fbf"
+      "client_key": "9f29cd26402f227e"
     },
     {
       "rule": "annuity_not_null",
       "column": "AMT_ANNUITY",
       "failure_value": "nulo",
-      "client_key": "bac666b7e1c44ffc"
+      "client_key": "caf2705f2c547f4b"
     },
     {
       "rule": "income_range",
       "column": "AMT_INCOME_TOTAL",
       "failure_value": "13500000.0",
-      "client_key": "d2cb2424d7090fba"
+      "client_key": "884e3678dd44a1cc"
     },
     {
       "rule": "domain_CODE_GENDER",
       "column": "CODE_GENDER",
       "failure_value": "XNA",
-      "client_key": "ec27a0b0ea085543"
+      "client_key": "288655b851425827"
     }
   ]
 }

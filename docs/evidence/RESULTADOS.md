@@ -33,7 +33,7 @@ foi alterada.
 | `06`: recall sobre o manifest | 1 | 10 de 10 features de `drifted_features` detectadas (recall 1,00) | Atendido |
 | `06`: renda e mais uma variável importante detectadas | `AMT_INCOME_TOTAL` e desemprego/outra | `AMT_INCOME_TOTAL` detectada (PSI 0,654; KS 0,148). Desemprego: `YEARS_EMPLOYED` (PSI 0,200; KS 0,168), `IS_UNEMPLOYED_OR_PENSIONER` (KS 0,116) e `NAME_INCOME_TYPE` (PSI 1,230) detectadas | Atendido |
 | Causal | `drop_concept > 0`; 3 principais da ablação coerentes com o DAG | `drop_concept` = 0,1502; principais: `EXT_SOURCE_2`, `EXT_SOURCE_3`, `YEARS_EMPLOYED` | Atendido |
-| Testes | suíte verde | 176 passed (`pytest -q` no contêiner) | Atendido |
+| Testes | suíte verde | 185 passed (`pytest -q` no contêiner) | Atendido |
 
 ## 2. Resultado por lote
 
@@ -117,16 +117,16 @@ no `06` sem ablação = 0,298):
 
 | # | Feature | PSI do score após | Recuperação do PSI | AUC após | Recuperação de AUC | Calibração após |
 |---|---|---|---|---|---|---|
-| 1 | EXT_SOURCE_2 | 0,081 | 73,0% | 0,5867 | +0,0193 | 2,374 |
-| 2 | EXT_SOURCE_3 | 0,130 | 56,6% | 0,5838 | +0,0029 | 2,329 |
-| 3 | YEARS_EMPLOYED | 0,245 | 17,9% | 0,5882 | +0,0280 | 2,199 |
-| 4 | EXT_SOURCE_1 | 0,249 | 16,4% | 0,5844 | +0,0064 | 2,191 |
-| 5 | AMT_CREDIT | 0,254 | 14,8% | 0,5822 | -0,0066 | 2,210 |
+| 1 | EXT_SOURCE_2 | 0,081 | 73,0% | 0,5867 | +1,9% | 2,374 |
+| 2 | EXT_SOURCE_3 | 0,130 | 56,6% | 0,5838 | +0,3% | 2,329 |
+| 3 | YEARS_EMPLOYED | 0,245 | 17,9% | 0,5882 | +2,8% | 2,199 |
+| 4 | EXT_SOURCE_1 | 0,249 | 16,4% | 0,5844 | +0,6% | 2,191 |
+| 5 | AMT_CREDIT | 0,254 | 14,8% | 0,5822 | -0,7% | 2,210 |
 
 Leitura pelo DAG: as `EXT_SOURCE` (canal digital, perfil jovem com histórico curto) respondem pela maior
 parte do deslocamento do score; `YEARS_EMPLOYED` vem do ramo desaceleração, desemprego. As features `AMT_*`
 não são irrelevantes: o top 5 só ordena quem mais recupera o PSI do score quando restaurado sozinho
-(`AMT_CREDIT` é o 5º, 14,8%, com recuperação de AUC negativa, -0,0066; `AMT_ANNUITY` vem logo atrás, 14,6%).
+(`AMT_CREDIT` é o 5º, 14,8%, com recuperação de AUC negativa, -0,7%; `AMT_ANNUITY` vem logo atrás, 14,6%).
 Recuperação de PSI **negativa** não é ruído; é consistente com deslocamentos que se compensam parcialmente:
 restaurar sozinha `AMT_GOODS_PRICE` (-23,7%, PSI do score vai a 0,369) ou `AGE_YEARS` (-15,8%, vai a 0,346)
 piora o PSI do score, e desfazer só um deslocamento desfaz parte do cancelamento (a ablação não identifica o mecanismo). A renda sozinha recupera 0,8%. Nenhuma ablação recupera a calibração nem o AUC de forma relevante
@@ -169,7 +169,7 @@ PSI da renda por lote (inflação de 0, 2, 5, 8, 10 e 12%): antes 0,002; 0,491; 
 (não monotônico); depois 0,001; 0,001; 0,489; 0,502; 0,533; 0,654 (monotônico). Teste unitário: série com
 poucos níveis redondos mais valores avulsos; x1,02 dá PSI < 0,10 e x1,25 dá PSI ≥ 0,20 (o teste falha com a
 borda "próximo valor distinto"). Limiares inalterados. O teste de consistência com o Evidently e os gates de
-`DRIFT_EFFECTS` continuaram válidos na base sintética (176 testes passam).
+`DRIFT_EFFECTS` continuaram válidos na base sintética (185 testes passam).
 
 Alcance da correção: ela remove só o artefato "massa de empate sobre a borda", e apenas para deslocamentos
 menores que a distância entre dois níveis de preço consecutivos. Acima disso (por exemplo +5%), a massa cruza
@@ -226,9 +226,16 @@ de mais de 0,05 e abaixo de 0,8); o próprio nível-base exige decisão de gover
    307 mil linhas do CSV no `prepare` terminou em cerca de 26 s, sem estouro de memória (Docker Desktop
    com 15,5 GiB).
 6. Privacidade: nenhum identificador bruto da base nos arquivos deste diretório (varredura por pertinência
-   ao conjunto de IDs): nenhum valor da coluna aparece como token numérico de 6 dígitos nos `.json`/`.md`;
-   nos `.html` do Evidently só coincidem constantes do código JavaScript/CSS embutido (`131070`, `191970`),
-   idênticas em todos os arquivos e sem relação com a base.
+   ao conjunto dos 307.511 `SK_ID_CURR`, sobre tokens numéricos inteiros): nenhum valor da coluna aparece
+   nos `.json` nem nos `.md` como identificador; nos `.html` do Evidently só coincidem constantes do código
+   JavaScript/CSS embutido (`131070`, `191970`, `262144` e cores como `121212`), o mesmo conjunto nos 12
+   arquivos, sem relação com a base. (O sentinela `365243` de `DAYS_EMPLOYED`, citado no README, também
+   é um valor possível da coluna, mas não é referência a um cliente.) Essa varredura só enxerga IDs
+   literais, e por isso há uma segunda verificação: as `client_key` destes arquivos usam um
+   `PSEUDONYMIZATION_SALT` aleatório de 64 caracteres hex e **não** o valor de exemplo do `.env.example`.
+   Testando por força bruta o salt de exemplo sobre todo o intervalo 100002 a 456255 (356.254 IDs), nenhuma
+   das 49 chaves distintas dos relatórios do contrato é revertida (as chaves da versão anterior, geradas com
+   o salt de exemplo, eram todas revertidas em segundos). O código agora rejeita o salt de exemplo.
 7. O MLflow mantém o histórico de execuções anteriores (inclusive sintéticas) no experimento
    `credit-monitoring`; a comparação das capturas usa só os seis runs mais recentes (`01`–`06`).
 
@@ -240,6 +247,10 @@ de mais de 0,05 e abaixo de 0,8); o próprio nível-base exige decisão de gover
 | `img/grafana-psi-matriz.jpg` | Matriz PSI feature x lote |
 | `img/prometheus-alerts.jpg` | Página `/alerts` do Prometheus, 12 alertas disparando (`FairnessDegraded` inativo) |
 | `img/mlflow-comparacao-runs.jpg` | Comparação dos runs `01`–`06` no MLflow (experimento `credit-monitoring`) |
+| `img/evidently-drift-06.png` | Relatório de drift do Evidently do lote `06` (tabela de colunas, distribuições e PSI), capturado de `drift/06_data_drift.html` |
+| `img/contrato-03-dirty.png` | Relatório de falhas do contrato do lote `03-dirty`, capturado de `contracts/03-dirty_failures.html` |
+
+Os `.html` não renderizam no GitHub: clone o repositório e abra `index.html` no navegador.
 
 Relatórios: `index.html` (tabela por lote, com links relativos para `drift/` e `contracts/`),
 `drift/`, `contracts/` e `causal/`.

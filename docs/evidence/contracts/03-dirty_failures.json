@@ -15,212 +15,212 @@
     {
       "rule": "client_key_unique",
       "column": "client_key",
-      "failure_value": "fe16d2e6c60e2bd3",
-      "client_key": "fe16d2e6c60e2bd3"
+      "failure_value": "50632fdf4171aa4e",
+      "client_key": "50632fdf4171aa4e"
     },
     {
       "rule": "ext_source_range",
       "column": "EXT_SOURCE_2",
       "failure_value": "1.5",
-      "client_key": "4912c4a078951a1c"
+      "client_key": "5e9ceabd50821693"
     },
     {
       "rule": "age_range",
       "column": "DAYS_BIRTH",
       "failure_value": "-5478.75",
-      "client_key": "6babc856f6fc7d8e"
+      "client_key": "072210677ebb0a9e"
     },
     {
       "rule": "age_range",
       "column": "DAYS_BIRTH",
       "failure_value": "-5478.75",
-      "client_key": "41b4a0d5aca0a0f0"
+      "client_key": "ae50bf1bc517f08f"
     },
     {
       "rule": "age_range",
       "column": "DAYS_BIRTH",
       "failure_value": "-5478.75",
-      "client_key": "f5e2320480a5f707"
+      "client_key": "fbb11779e27b0424"
     },
     {
       "rule": "age_range",
       "column": "DAYS_BIRTH",
       "failure_value": "-5478.75",
-      "client_key": "5aa0ffe19cedd3c0"
+      "client_key": "8cd3aa67ebb2ee3d"
     },
     {
       "rule": "age_range",
       "column": "DAYS_BIRTH",
       "failure_value": "-5478.75",
-      "client_key": "5ba0ed38c9dc41bf"
+      "client_key": "14c60693f8553822"
     },
     {
       "rule": "ext_source_range",
       "column": "EXT_SOURCE_2",
       "failure_value": "1.5",
-      "client_key": "f9def755f23bbaf9"
+      "client_key": "918ae01c46537c67"
     },
     {
       "rule": "ext_source_range",
       "column": "EXT_SOURCE_2",
       "failure_value": "1.5",
-      "client_key": "2116733c4d43bf51"
+      "client_key": "25201d379185fb43"
     },
     {
       "rule": "credit_positive",
       "column": "AMT_CREDIT",
       "failure_value": "-599544.0",
-      "client_key": "91f713d52f85d41a"
+      "client_key": "8d0beba69bad07c7"
     },
     {
       "rule": "ext_source_range",
       "column": "EXT_SOURCE_2",
       "failure_value": "1.5",
-      "client_key": "6d88dca381ee7fa2"
+      "client_key": "a730f02c17a83c9b"
     },
     {
       "rule": "ext_source_range",
       "column": "EXT_SOURCE_2",
       "failure_value": "1.5",
-      "client_key": "ceab1b199ceeae98"
+      "client_key": "b0487488c6c18118"
     },
     {
       "rule": "domain_NAME_CONTRACT_TYPE",
       "column": "NAME_CONTRACT_TYPE",
       "failure_value": "Consumer loans",
-      "client_key": "963e38afbff06b3e"
+      "client_key": "3801ba2c4801c4da"
     },
     {
       "rule": "domain_NAME_CONTRACT_TYPE",
       "column": "NAME_CONTRACT_TYPE",
       "failure_value": "Consumer loans",
-      "client_key": "7c12a2cea192e387"
+      "client_key": "aac892b3370ce76b"
     },
     {
       "rule": "domain_NAME_CONTRACT_TYPE",
       "column": "NAME_CONTRACT_TYPE",
       "failure_value": "Consumer loans",
-      "client_key": "c9571d40eb84540e"
+      "client_key": "2111c30e8328034c"
     },
     {
       "rule": "domain_NAME_CONTRACT_TYPE",
       "column": "NAME_CONTRACT_TYPE",
       "failure_value": "Consumer loans",
-      "client_key": "2880e5195869c54c"
+      "client_key": "2d765c15f290e153"
     },
     {
       "rule": "credit_positive",
       "column": "AMT_CREDIT",
       "failure_value": "-843044.375",
-      "client_key": "0400fe8f3b833035"
+      "client_key": "f476df71c9c5bea8"
     },
     {
       "rule": "credit_positive",
       "column": "AMT_CREDIT",
       "failure_value": "-1077991.25",
-      "client_key": "16d8949a22e8218d"
+      "client_key": "ffee60cb514b835b"
     },
     {
       "rule": "client_key_unique",
       "column": "client_key",
-      "failure_value": "fe16d2e6c60e2bd3",
-      "client_key": "fe16d2e6c60e2bd3"
+      "failure_value": "50632fdf4171aa4e",
+      "client_key": "50632fdf4171aa4e"
     },
     {
       "rule": "client_key_unique",
       "column": "client_key",
-      "failure_value": "3404612b75444f6d",
-      "client_key": "3404612b75444f6d"
+      "failure_value": "98e7096f9e5b220b",
+      "client_key": "98e7096f9e5b220b"
     },
     {
       "rule": "client_key_unique",
       "column": "client_key",
-      "failure_value": "bfaf3b789bd792a6",
-      "client_key": "bfaf3b789bd792a6"
+      "failure_value": "b137f109cd498050",
+      "client_key": "b137f109cd498050"
     },
     {
       "rule": "client_key_unique",
       "column": "client_key",
-      "failure_value": "ced98a5005a1d2ba",
-      "client_key": "ced98a5005a1d2ba"
+      "failure_value": "75d9df8eb9ba0b83",
+      "client_key": "75d9df8eb9ba0b83"
     },
     {
       "rule": "client_key_unique",
       "column": "client_key",
-      "failure_value": "ced98a5005a1d2ba",
-      "client_key": "ced98a5005a1d2ba"
+      "failure_value": "75d9df8eb9ba0b83",
+      "client_key": "75d9df8eb9ba0b83"
     },
     {
       "rule": "client_key_unique",
       "column": "client_key",
-      "failure_value": "bfaf3b789bd792a6",
-      "client_key": "bfaf3b789bd792a6"
+      "failure_value": "b137f109cd498050",
+      "client_key": "b137f109cd498050"
     },
     {
       "rule": "client_key_unique",
       "column": "client_key",
-      "failure_value": "c027a421c866b602",
-      "client_key": "c027a421c866b602"
+      "failure_value": "a8c432f66c4092bf",
+      "client_key": "a8c432f66c4092bf"
     },
     {
       "rule": "client_key_unique",
       "column": "client_key",
-      "failure_value": "3404612b75444f6d",
-      "client_key": "3404612b75444f6d"
+      "failure_value": "98e7096f9e5b220b",
+      "client_key": "98e7096f9e5b220b"
     },
     {
       "rule": "client_key_unique",
       "column": "client_key",
-      "failure_value": "c027a421c866b602",
-      "client_key": "c027a421c866b602"
+      "failure_value": "a8c432f66c4092bf",
+      "client_key": "a8c432f66c4092bf"
     },
     {
       "rule": "credit_positive",
       "column": "AMT_CREDIT",
       "failure_value": "-296505.0",
-      "client_key": "8fae5e537165a1f1"
+      "client_key": "e24202e208d94d54"
     },
     {
       "rule": "income_not_null",
       "column": "AMT_INCOME_TOTAL",
       "failure_value": "nulo",
-      "client_key": "6ae46c38220f1f89"
+      "client_key": "8a3d7701d5398805"
     },
     {
       "rule": "income_not_null",
       "column": "AMT_INCOME_TOTAL",
       "failure_value": "nulo",
-      "client_key": "517469bccd1c6846"
+      "client_key": "ecfdacc23db161ef"
     },
     {
       "rule": "income_not_null",
       "column": "AMT_INCOME_TOTAL",
       "failure_value": "nulo",
-      "client_key": "f7329d51502be8a7"
+      "client_key": "8c22fd82ffbc8e96"
     },
     {
       "rule": "income_not_null",
       "column": "AMT_INCOME_TOTAL",
       "failure_value": "nulo",
-      "client_key": "d4abbe9fa9861054"
+      "client_key": "9383124aa69efc49"
     },
     {
       "rule": "income_not_null",
       "column": "AMT_INCOME_TOTAL",
       "failure_value": "nulo",
-      "client_key": "d93d68903d963a8f"
+      "client_key": "78fff187424eecde"
     },
     {
       "rule": "credit_positive",
       "column": "AMT_CREDIT",
       "failure_value": "-345510.0",
-      "client_key": "7b6ae748b78b8d70"
+      "client_key": "98abd1c1b0682c0a"
     },
     {
       "rule": "domain_NAME_CONTRACT_TYPE",
       "column": "NAME_CONTRACT_TYPE",
       "failure_value": "Consumer loans",
-      "client_key": "8df8bef6873738a4"
+      "client_key": "9b9d0a41e5ab7fbe"
     }
   ]
 }
