@@ -5,42 +5,42 @@
     {
       "feature": "AMT_INCOME_TOTAL",
       "kind": "numeric",
-      "psi": 0.2470798347956218,
+      "psi": 0.532522013190091,
       "ks": 0.13270618789521227,
       "status": "drift"
     },
     {
       "feature": "AMT_CREDIT",
       "kind": "numeric",
-      "psi": 0.1440420124583411,
+      "psi": 0.1360324619213522,
       "ks": 0.09899467028003614,
       "status": "atencao"
     },
     {
       "feature": "AMT_ANNUITY",
       "kind": "numeric",
-      "psi": 0.2092496939477067,
+      "psi": 0.2076536691957789,
       "ks": 0.1927601626016261,
       "status": "drift"
     },
     {
       "feature": "AMT_GOODS_PRICE",
       "kind": "numeric",
-      "psi": 0.22193281339249685,
+      "psi": 0.2322969761285725,
       "ks": 0.14780424742123216,
       "status": "drift"
     },
     {
       "feature": "AGE_YEARS",
       "kind": "numeric",
-      "psi": 0.14347827339432112,
+      "psi": 0.14387848943506482,
       "ks": 0.16748414634146344,
       "status": "drift"
     },
     {
       "feature": "YEARS_EMPLOYED",
       "kind": "numeric",
-      "psi": 0.12549412170181162,
+      "psi": 0.1260888025333155,
       "ks": 0.13213311585927207,
       "status": "drift"
     },
@@ -68,42 +68,42 @@
     {
       "feature": "EXT_SOURCE_1",
       "kind": "numeric",
-      "psi": 0.03666746991528489,
+      "psi": 0.03636673233516044,
       "ks": 0.10448050043841206,
       "status": "drift"
     },
     {
       "feature": "EXT_SOURCE_2",
       "kind": "numeric",
-      "psi": 0.6086095608346095,
+      "psi": 0.633282489956671,
       "ks": 0.2049798697348284,
       "status": "drift"
     },
     {
       "feature": "EXT_SOURCE_3",
       "kind": "numeric",
-      "psi": 0.2137495126342667,
+      "psi": 0.2514165364153527,
       "ks": 0.16478861243301723,
       "status": "drift"
     },
     {
       "feature": "CREDIT_INCOME_RATIO",
       "kind": "numeric",
-      "psi": 0.008525810761819682,
+      "psi": 0.007522901817162569,
       "ks": 0.0440355916892502,
       "status": "ok"
     },
     {
       "feature": "ANNUITY_INCOME_RATIO",
       "kind": "numeric",
-      "psi": 0.08189518385762824,
+      "psi": 0.08158381541901757,
       "ks": 0.1244912375790424,
       "status": "drift"
     },
     {
       "feature": "CREDIT_TERM",
       "kind": "numeric",
-      "psi": 0.5138421864560268,
+      "psi": 0.3512909163954725,
       "ks": 0.22527199638663048,
       "status": "drift"
     },
@@ -171,7 +171,7 @@
     "YEARS_EMPLOYED"
   ],
   "dataset_drift_share": 0.5,
-  "prediction_psi": 0.1632030495235685,
+  "prediction_psi": 0.16246621424464538,
   "performance": {
     "auc": 0.5997583553457226,
     "ks": 0.1443356904661553,
@@ -184,6 +184,10 @@
   "fairness": {
     "gender": 0.8611628542755891,
     "age_band": 0.5456017540909391
+  },
+  "fairness_reference": {
+    "gender": 0.8605860750724548,
+    "age_band": 0.5409630019145819
   },
   "evidently": {
     "data_drift": {
@@ -215,8 +219,8 @@
     "NAME_CONTRACT_TYPE": 0.0011246148785881067,
     "NAME_INCOME_TYPE": 1.1142787751536034,
     "NAME_EDUCATION_TYPE": 0.005747618442318063,
-    "NAME_FAMILY_STATUS": 0.011941999055598881,
-    "NAME_HOUSING_TYPE": 0.012278598291748695,
+    "NAME_FAMILY_STATUS": 0.01194199905559888,
+    "NAME_HOUSING_TYPE": 0.012278598291748693,
     "FLAG_OWN_CAR": 0.0006300665571690072,
     "FLAG_OWN_REALTY": 0.0032867752977778506
   },
@@ -224,7 +228,6 @@
   "recommendation_reasons": [
     "AUC 0.600 caiu mais de 0.05 abaixo da referência (0.758).",
     "Calibração: a razão observado/previsto é 1.85x a da referência (limite 1.3).",
-    "50% das features com drift (limite 30%).",
-    "Impacto disparato de age_band 0.55 (mínimo 0.8)."
+    "50% das features com drift (limite 30%)."
   ]
 }

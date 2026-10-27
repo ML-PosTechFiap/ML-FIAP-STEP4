@@ -5,42 +5,42 @@
     {
       "feature": "AMT_INCOME_TOTAL",
       "kind": "numeric",
-      "psi": 0.0016345579855212976,
+      "psi": 0.001453168953380504,
       "ks": 0.006296973803071371,
       "status": "ok"
     },
     {
       "feature": "AMT_CREDIT",
       "kind": "numeric",
-      "psi": 0.00046739191558339697,
+      "psi": 0.0005508054872254782,
       "ks": 0.009753477868112037,
       "status": "ok"
     },
     {
       "feature": "AMT_ANNUITY",
       "kind": "numeric",
-      "psi": 0.001105981214820009,
+      "psi": 0.0010451769490272384,
       "ks": 0.005485275519421906,
       "status": "ok"
     },
     {
       "feature": "AMT_GOODS_PRICE",
       "kind": "numeric",
-      "psi": 0.0008385113567727707,
+      "psi": 0.0008097400855326728,
       "ks": 0.008620048249125933,
       "status": "ok"
     },
     {
       "feature": "AGE_YEARS",
       "kind": "numeric",
-      "psi": 0.0005307259019902216,
+      "psi": 0.00084768878800206,
       "ks": 0.009014046973803036,
       "status": "ok"
     },
     {
       "feature": "YEARS_EMPLOYED",
       "kind": "numeric",
-      "psi": 0.00031202293864018084,
+      "psi": 0.0005874353860028155,
       "ks": 0.005212625156401307,
       "status": "ok"
     },
@@ -68,42 +68,42 @@
     {
       "feature": "EXT_SOURCE_1",
       "kind": "numeric",
-      "psi": 0.0009991602197238546,
+      "psi": 0.0008650576680529748,
       "ks": 0.010388999887198658,
       "status": "ok"
     },
     {
       "feature": "EXT_SOURCE_2",
       "kind": "numeric",
-      "psi": 0.001058434218562007,
+      "psi": 0.0009545896160579053,
       "ks": 0.0068470269518596805,
       "status": "ok"
     },
     {
       "feature": "EXT_SOURCE_3",
       "kind": "numeric",
-      "psi": 0.0008231685221917774,
+      "psi": 0.0006754902794371175,
       "ks": 0.006662359904524018,
       "status": "ok"
     },
     {
       "feature": "CREDIT_INCOME_RATIO",
       "kind": "numeric",
-      "psi": 0.0006163184286449572,
+      "psi": 0.0007237861344962373,
       "ks": 0.007138482384823841,
       "status": "ok"
     },
     {
       "feature": "ANNUITY_INCOME_RATIO",
       "kind": "numeric",
-      "psi": 0.0008498517630544836,
+      "psi": 0.0007530986870101909,
       "ks": 0.0067156729900632595,
       "status": "ok"
     },
     {
       "feature": "CREDIT_TERM",
       "kind": "numeric",
-      "psi": 0.0004471723542942471,
+      "psi": 0.0005771114007977256,
       "ks": 0.00720740740740744,
       "status": "ok"
     },
@@ -159,7 +159,7 @@
   ],
   "drifted_features": [],
   "dataset_drift_share": 0.0,
-  "prediction_psi": 0.00042887460512783476,
+  "prediction_psi": 0.000431784118528872,
   "performance": {
     "auc": 0.7584939874535757,
     "ks": 0.3937243104205982,
@@ -172,6 +172,10 @@
   "fairness": {
     "gender": 0.8646258695753515,
     "age_band": 0.5153400153113341
+  },
+  "fairness_reference": {
+    "gender": 0.8605860750724548,
+    "age_band": 0.5409630019145819
   },
   "evidently": {
     "data_drift": {
@@ -201,15 +205,13 @@
     "CREDIT_TERM": 0.0012815994417618654,
     "score": 0.0009618130468730825,
     "NAME_CONTRACT_TYPE": 1.693571244847196e-07,
-    "NAME_INCOME_TYPE": 0.0014276628329634381,
+    "NAME_INCOME_TYPE": 0.0014276628329634384,
     "NAME_EDUCATION_TYPE": 0.00012285743516673523,
     "NAME_FAMILY_STATUS": 0.0007970135862367465,
     "NAME_HOUSING_TYPE": 0.00015066531927050594,
     "FLAG_OWN_CAR": 0.00014079326954856658,
     "FLAG_OWN_REALTY": 0.00032868775585166205
   },
-  "recommendation": "INVESTIGAR",
-  "recommendation_reasons": [
-    "Impacto disparato de age_band 0.52 (mínimo 0.8)."
-  ]
+  "recommendation": "OK",
+  "recommendation_reasons": []
 }

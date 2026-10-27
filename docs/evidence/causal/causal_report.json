@@ -10,106 +10,106 @@
   "ablation": [
     {
       "feature": "EXT_SOURCE_2",
-      "prediction_psi_after": 0.08060973978352667,
+      "prediction_psi_after": 0.08051504356933493,
       "auc_after": 0.5866754653890359,
       "calibration_after": 2.3742595417474117,
-      "psi_recovery": 0.7302816784341549,
+      "psi_recovery": 0.7301918914476756,
       "auc_recovery": 0.01934355393491775
     },
     {
       "feature": "EXT_SOURCE_3",
-      "prediction_psi_after": 0.1309575900703971,
+      "prediction_psi_after": 0.1296046295916354,
       "auc_after": 0.5838079343424067,
       "calibration_after": 2.32894757031755,
-      "psi_recovery": 0.5618189379478212,
+      "psi_recovery": 0.5656913488517087,
       "auc_recovery": 0.0028987827090836715
     },
     {
       "feature": "YEARS_EMPLOYED",
-      "prediction_psi_after": 0.2454231299026964,
+      "prediction_psi_after": 0.24509833668863823,
       "auc_after": 0.5881799653758786,
       "calibration_after": 2.199152836299973,
-      "psi_recovery": 0.178819893866979,
+      "psi_recovery": 0.1786687841218727,
       "auc_recovery": 0.027971588885744667
     },
     {
       "feature": "EXT_SOURCE_1",
-      "prediction_psi_after": 0.2502857136306678,
+      "prediction_psi_after": 0.24935908930335016,
       "auc_after": 0.584426758048848,
       "calibration_after": 2.1913895443676537,
-      "psi_recovery": 0.16254980138058864,
+      "psi_recovery": 0.16439088581837322,
       "auc_recovery": 0.006447624592944754
     },
     {
-      "feature": "AMT_ANNUITY",
-      "prediction_psi_after": 0.2555697304421788,
-      "auc_after": 0.5846717880123151,
-      "calibration_after": 2.2081509253632543,
-      "psi_recovery": 0.14486960356139533,
-      "auc_recovery": 0.007852827057074126
-    },
-    {
       "feature": "AMT_CREDIT",
-      "prediction_psi_after": 0.25596348975408867,
+      "prediction_psi_after": 0.25425212794245267,
       "auc_after": 0.5821551606878718,
       "calibration_after": 2.209901524005327,
-      "psi_recovery": 0.1435520940272564,
+      "psi_recovery": 0.1479941797897312,
       "auc_recovery": -0.00657957487273337
     },
     {
+      "feature": "AMT_ANNUITY",
+      "prediction_psi_after": 0.2547532055660276,
+      "auc_after": 0.5846717880123151,
+      "calibration_after": 2.2081509253632543,
+      "psi_recovery": 0.1463150549968815,
+      "auc_recovery": 0.007852827057074126
+    },
+    {
       "feature": "NAME_INCOME_TYPE",
-      "prediction_psi_after": 0.2794529776277628,
+      "prediction_psi_after": 0.2778251957597021,
       "auc_after": 0.5800629772074545,
       "calibration_after": 2.1748160522277793,
-      "psi_recovery": 0.06495681185983553,
+      "psi_recovery": 0.06900018613846158,
       "auc_recovery": -0.018577868226305142
     },
     {
       "feature": "CREDIT_TERM",
-      "prediction_psi_after": 0.28584380012290844,
+      "prediction_psi_after": 0.28564839072594883,
       "auc_after": 0.5822288045857132,
       "calibration_after": 2.148305021430692,
-      "psi_recovery": 0.04357326786819256,
+      "psi_recovery": 0.042784446282822956,
       "auc_recovery": -0.006157240455951572
     },
     {
       "feature": "ANNUITY_INCOME_RATIO",
-      "prediction_psi_after": 0.290297654119415,
+      "prediction_psi_after": 0.2891438804014373,
       "auc_after": 0.5845889080503862,
       "calibration_after": 2.163256806184155,
-      "psi_recovery": 0.028670775592903364,
+      "psi_recovery": 0.031070964975499726,
       "auc_recovery": 0.007377525485455976
     },
     {
       "feature": "AMT_INCOME_TOTAL",
-      "prediction_psi_after": 0.2965432821939145,
+      "prediction_psi_after": 0.2958995925896821,
       "auc_after": 0.5831149182078329,
       "calibration_after": 2.1582505919726,
-      "psi_recovery": 0.007773048768547745,
+      "psi_recovery": 0.008432389044474131,
       "auc_recovery": -0.001075539313436508
     },
     {
       "feature": "IS_UNEMPLOYED_OR_PENSIONER",
-      "prediction_psi_after": 0.2988913226503828,
+      "prediction_psi_after": 0.2984334358444181,
       "auc_after": 0.5833061254896468,
       "calibration_after": 2.1555265215318307,
-      "psi_recovery": -8.344019405220612e-05,
+      "psi_recovery": -5.8588860042079175e-05,
       "auc_recovery": 2.0999819012998416e-05
     },
     {
       "feature": "AGE_YEARS",
-      "prediction_psi_after": 0.34641428352938985,
+      "prediction_psi_after": 0.3455404554569712,
       "auc_after": 0.5799776140340733,
       "calibration_after": 2.111573927356787,
-      "psi_recovery": -0.1590941661751393,
+      "psi_recovery": -0.15791549730542098,
       "auc_recovery": -0.019067410565877838
     },
     {
       "feature": "AMT_GOODS_PRICE",
-      "prediction_psi_after": 0.3708380125015667,
+      "prediction_psi_after": 0.3690607393010467,
       "auc_after": 0.5832430148559051,
       "calibration_after": 2.085766117156391,
-      "psi_recovery": -0.24081539741152733,
+      "psi_recovery": -0.23673261042191612,
       "auc_recovery": -0.00034092823579177673
     }
   ],
