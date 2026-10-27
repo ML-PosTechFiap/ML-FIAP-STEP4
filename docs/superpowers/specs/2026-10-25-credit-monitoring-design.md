@@ -52,6 +52,13 @@ infraestrutura e modelo, e governança documentada sob a LGPD, incluindo anális
   suportados: `KAGGLE_USERNAME`/`KAGGLE_KEY` no `.env`, ou o arquivo colocado manualmente em
   `data/raw/application_train.csv`.
 
+### Versões fixadas que diferem do plano
+
+- `pyarrow==17.0.0` (e não 18): `mlflow==2.17.2` exige `pyarrow<18`.
+- `multimethod==1.10.0`: `pandera==0.21.0` quebra com `multimethod` 2.x e avisa a partir da 1.11.
+- `sqlalchemy==2.0.36` na imagem do MLflow (`infra/mlflow/Dockerfile`): o MLflow 2.17 não importa com
+  SQLAlchemy 2.1 ou superior.
+
 ## 3. Arquitetura
 
 ### 3.1 Serviços (`docker-compose.yml`)
@@ -64,6 +71,10 @@ infraestrutura e modelo, e governança documentada sob a LGPD, incluindo anális
 | `prometheus` | Coleta Pushgateway e `/metrics` dos demais serviços e avalia `alerts.yml` | 9090 |
 | `grafana` | Datasources (Prometheus, Loki) e dashboard provisionados a partir do repositório | 3000 |
 | `loki` | Recebe os logs do pipeline via API HTTP (sem agente) | 3100 |
+
+As portas do host podem ser sobrescritas no `.env` (`MLFLOW_PORT`, `PUSHGATEWAY_PORT`, `PROMETHEUS_PORT`,
+`LOKI_PORT`, `GRAFANA_PORT`), por exemplo quando outra stack local já ocupa 3000 ou 9090. Os padrões da
+tabela acima não mudam, e a comunicação entre contêineres continua nas portas internas.
 
 O container `pipeline` monta `src/`, `data/` e `reports/` como bind mounts, para que editar código
 não exija rebuild. Só mudanças de dependência (`pyproject.toml`) pedem `docker compose build`.
@@ -89,7 +100,7 @@ monitor --batch N:  ingestão ─► contrato ─┬─► (falha) quarentena + 
 | Comando | O que faz |
 |---|---|
 | `download` | Baixa `application_train.csv` via API do Kaggle (ou confere se o arquivo manual existe) |
-| `prepare` | Aplica o contrato na base bruta (mostra as anomalias reais), limpa a referência, faz o split 60/40 e gera os lotes `01`..`06` e `03-dirty`, cada um com `manifest.json` |
+| `prepare [--synthetic] [--n]` | Aplica o contrato na base bruta (mostra as anomalias reais), limpa a referência, faz o split 60/40 e gera os lotes `01`..`06` e `03-dirty`, cada um com `manifest.json`. Com `--synthetic`, gera antes uma base sintética no mesmo schema (demo e CI sem Kaggle) |
 | `train` | Valida a referência, treina, avalia, faz a auditoria de viés e registra `credit-scoring` com alias `production` |
 | `monitor --batch <id>` | Roda a esteira mensal para um lote |
 | `simulate-all [--interval 30s]` | Roda `01, 02, 03-dirty, 03, 04, 05, 06` em sequência, opcionalmente espaçados |
@@ -155,8 +166,10 @@ Features derivadas (`model/features.py`): `AGE_YEARS`, `YEARS_EMPLOYED` (NaN qua
 ### 4.2 Split (estratificado por `TARGET`, `SEED = 42`)
 
 - **Referência (60%)**: dividida em treino 70% / validação 15% / teste 15%.
-- **Pool de produção (40%)**: fonte dos lotes mensais (cerca de 20 mil linhas cada, amostrados sem reposição
-  e com reamostragem ponderada onde a simulação exige).
+- **Pool de produção (40%)**: fonte dos lotes mensais. Cada lote `01`..`06` é um sorteio **independente** do
+  pool inteiro (sem reposição dentro do lote; uma linha pode aparecer em meses diferentes), com
+  `min(BATCH_SIZE, len(pool) // 6)` linhas (20 mil com os dados reais) e com reamostragem ponderada onde a
+  simulação exige.
 - A base de comparação do drift é o **teste da referência com predições**, não o treino.
 
 ## 5. Etapa 1 — Contrato de dados e modelo base
@@ -174,11 +187,16 @@ Regras rígidas e bloqueantes, aplicadas ao lote **bruto** antes de qualquer tra
 7. Colunas obrigatórias presentes, tipos corretos e lote com pelo menos 1.000 linhas (check de DataFrame).
    O schema aceita a coluna `TARGET` como opcional (`0/1`), para lotes com e sem rótulo.
 
+O contrato valida o frame já pseudonimizado: a regra 1 incide sobre `client_key` (`client_key_unique` e
+`client_key_not_null`). O nome de cada check é o rótulo estável `rule`; os erros nativos do Pandera são
+normalizados para `column_missing`, `dtype_coercion` e `validation_error` (erro inesperado, que também
+bloqueia o lote).
+
 ### 5.2 Validação e bloqueio (`contracts/validate.py`)
 
 - `schema.validate(df, lazy=True)` e captura de `SchemaErrors`.
 - Em caso de falha, **o lote inteiro é bloqueado**:
-  - arquivo movido para `data/quarantine/<batch>.parquet`;
+  - arquivo **copiado** (não movido) para `data/quarantine/<batch>.parquet`, para que reexecutar o lote bloqueie de novo;
   - `reports/contracts/<batch>_failures.json` e `<batch>_failures.html` com regra, coluna, valor
     ofensor e `client_key`, sem identificador bruto;
   - métricas `contract_passed=0` e `contract_violations{rule}`; run do MLflow com `status=blocked`;
@@ -234,7 +252,14 @@ esperadas.
   desempregado), a fração indicada de `TARGET = 0` vira `1`. Os rótulos pré-virada ficam em
   `data/batches/<id>/labels_original.parquet`, invisível para o monitoramento e usado só pelo `causal`.
 - Os valores simulados respeitam o contrato: lotes `01`..`06` precisam passar.
-- Cada lote grava `manifest.json` com os parâmetros aplicados e as features em que o drift foi injetado.
+- Cada lote grava `manifest.json` com as chaves `batch_id`, `params`, `injected_features`,
+  `drifted_features`, `n_rows` e `n_concept_flips` (o `03-dirty` acrescenta `expected_rules`).
+  `injected_features` é a verdade-base: toda feature que os parâmetros ativos tocam, detectável ou não.
+  `drifted_features` é o subconjunto em que se espera drift detectável (parâmetros acima de um mínimo),
+  usado no teste de recall da detecção.
+- **Amostragem independente:** cada lote `01`..`06` é sorteado do pool inteiro, e não de um pool que os
+  meses anteriores esvaziam. A amostragem disjunta esgotava as linhas jovens e o lote `04` saía com menos
+  de 2% de menores de 30 anos (referência: 15%), o que invertia o drift de idade previsto acima.
 - Todos os rótulos alterados são sintéticos, e o README declara isso.
 
 **Premissa de rótulos:** o rótulo chega junto com o lote. Em produção real ele chegaria com atraso; essa
@@ -247,10 +272,23 @@ sinais com rótulo (desempenho e calibração).
   `ClassificationPreset` (referência vs lote). Saída: `reports/drift/<batch>_data_drift.html`,
   `<batch>_performance.html` e os respectivos JSON.
 - **Estatística própria:** PSI com 10 bins por quantil da referência (categóricas por categoria, com
-  epsilon para bins vazios) e KS (`ks_2samp`, estatística D) nas numéricas.
-- **Desempenho por lote:** ROC-AUC, KS, taxa de default observada, PD média prevista,
-  `calibration_ratio = default observado / PD média`, taxa de aprovação.
+  epsilon para bins vazios) e KS (`ks_2samp`, estatística D) nas numéricas. É a fonte dos alertas; o
+  Evidently fornece os relatórios de evidência.
+- **Bins do PSI robustos a empates:** cada borda numérica fica no **ponto médio entre o corte do quantil e
+  o próximo valor da grade de 100 percentis da referência** acima dele. Com as bordas exatamente sobre os
+  valores de empate (renda e preço do bem concentram-se em valores redondos), até uma inflação de 2%
+  trocava de bin massas inteiras (PSI da renda 0,49 no lote `02`), um artefato de medição. A correção
+  remove esse artefato apenas para deslocamentos menores que a distância entre níveis de preço
+  consecutivos; acima disso a massa cruza a borda de verdade, e o PSI do `AMT_GOODS_PRICE` continua não
+  monotônico entre lotes.
+- **Desempenho por lote:** ROC-AUC, KS, taxa de default observada, PD média prevista, taxa de aprovação e a
+  **calibração relativa**: `calibration_ratio_raw = default observado / PD média` e
+  `calibration_ratio = calibration_ratio_raw do lote / calibration_ratio_raw da referência` (1,0 = igual à
+  referência). É relativa porque o modelo usa `scale_pos_weight`: o score não é uma probabilidade calibrada,
+  e o quociente bruto já é cerca de 0,20 na referência.
 - **Regra do KS:** usa o tamanho do efeito (D > 0,10), não o p-valor, que satura com cerca de 20 mil linhas.
+  O KS é hipersensível em variável discretizada (a renda no lote `02` tem D = 0,119 com PSI 0,001): é drift
+  injetado de verdade, e o limiar fica fixo.
 
 ### 6.3 Limiares e recomendação
 
@@ -261,13 +299,19 @@ sinais com rótulo (desempenho e calibração).
 | Drift share do dataset | — | ≥ 0,30 |
 | PSI do score | — | ≥ 0,20 |
 | AUC | — | < AUC de referência − 0,05 |
-| Calibração | — | `calibration_ratio` > 1,3 |
-| Impacto disparato | — | < 0,8 |
+| Calibração | — | `calibration_ratio` (relativa à referência) > 1,3 |
+| Impacto disparato | — | < 0,8 **e** < impacto da referência − 0,05 (`FAIRNESS_DEGRADATION_MARGIN`) |
 
 Recomendação por lote:
 - `RETREINAR`: algum alerta de desempenho ou de calibração.
 - `INVESTIGAR`: drift de dataset, drift de predição ou alerta de viés, sem queda de desempenho.
 - `OK`: nenhum dos casos acima.
+
+**Regra de viés: degradação, não nível.** O impacto disparato por faixa etária já é cerca de 0,54 na
+referência (achado do modelo-base, documentado na seção 8.3). Com a regra absoluta (`< 0,8`), `INVESTIGAR`
+e o alerta ficariam ligados desde o lote `01`. O alerta e a recomendação disparam só se o impacto do lote
+estiver abaixo de 0,8 **e** mais de 0,05 abaixo do impacto do mesmo atributo na referência. O nível-base
+exige decisão de governança, não monitoramento mensal.
 
 ### 6.4 Evidência
 
@@ -292,29 +336,29 @@ rows_out, message`. São escritos em três destinos: stdout, `reports/logs/pipel
 
 | Grupo | Métricas |
 |---|---|
-| Pipeline | `pipeline_stage_status{stage,batch}`, `pipeline_stage_duration_seconds{stage,batch}`, `pipeline_rows_processed{stage,batch}`, `pipeline_last_success_timestamp`, `pipeline_peak_memory_bytes{batch}` |
+| Pipeline | `pipeline_stage_status{stage,batch}` (1 sucesso, 0 erro, -1 bloqueado pelo contrato), `pipeline_stage_duration_seconds{stage,batch}`, `pipeline_rows_processed{stage,batch}`, `pipeline_last_success_timestamp`, `pipeline_peak_memory_bytes{batch}`, `batch_info{batch_id}` (lote real do grupo `latest`, valor 1) |
 | Qualidade | `contract_passed{batch}`, `contract_violations{batch,rule}` |
 | Drift | `feature_psi{batch,feature}`, `feature_ks{batch,feature}`, `dataset_drift_share{batch}`, `prediction_psi{batch}` |
 | Modelo | `model_auc{batch}`, `model_ks{batch}`, `default_rate_observed{batch}`, `mean_predicted_pd{batch}`, `calibration_ratio{batch}`, `approval_rate{batch}`, `monitor_recommendation{batch}` (0/1/2), `model_auc_reference`, `model_ks_reference` |
-| Viés | `fairness_disparate_impact{batch,attribute}` (`gender`, `age_band`) |
+| Viés | `fairness_disparate_impact{batch,attribute}` (`gender`, `age_band`) e `fairness_disparate_impact_reference{batch,attribute}` (impacto disparato da referência, para o alerta de degradação e para as barras cinzas do painel) |
 | Infra | `up{job}` (coletado pelo Prometheus) e métricas nativas do MLflow, Grafana e Loki |
 
 **Agrupamento no Pushgateway:** cada execução publica no grupo `{job="credit_pipeline", batch=<id>}`
 (histórico) **e** no grupo `{job="credit_pipeline", batch="latest"}` (sobrescrito). Os alertas olham só
-para `batch="latest"`.
+para `batch="latest"`. O label `batch` vem só da *grouping key* do Pushgateway: as métricas não o declaram.
 
 ### 7.4 Alertas (`infra/prometheus/alerts.yml`, `for: 0m`, exceto `InfraTargetDown`)
 
 | Alerta | Expressão (sobre `batch="latest"`) | Severidade |
 |---|---|---|
 | `DataContractViolation` | `credit_contract_passed == 0` | critical |
-| `PipelineStageFailed` | `credit_pipeline_stage_status == 0` | critical |
+| `PipelineStageFailed` | `credit_pipeline_stage_status == 0` (o bloqueio pelo contrato usa -1 e não duplica o `DataContractViolation`) | critical |
 | `FeatureDriftDetected` | `credit_feature_psi >= 0.2` | warning |
 | `DatasetDriftDetected` | `credit_dataset_drift_share >= 0.3` | critical |
 | `PredictionDrift` | `credit_prediction_psi >= 0.2` | warning |
 | `ModelPerformanceDegraded` | `credit_model_auc < credit_model_auc_reference - 0.05` | critical |
 | `ModelMiscalibrated` | `credit_calibration_ratio > 1.3` | warning |
-| `FairnessDegraded` | `credit_fairness_disparate_impact < 0.8` | warning |
+| `FairnessDegraded` | `credit_fairness_disparate_impact < 0.8 and on(batch, attribute) credit_fairness_disparate_impact < on(batch, attribute) credit_fairness_disparate_impact_reference - 0.05` (queda em relação à referência, não o nível absoluto) | warning |
 | `InfraTargetDown` | `up == 0` por 1 minuto | critical |
 
 ### 7.5 Dashboard Grafana "Credit Model Monitoring"
@@ -347,7 +391,7 @@ O README traz uma tabela com métrica, tipo, labels, significado, limiar e alert
 
 | Medida | Implementação |
 |---|---|
-| Minimização | `usecols` com 18 das 122 colunas |
+| Minimização | `usecols` com 21 das 122 colunas (`config.RAW_COLUMNS`) |
 | Pseudonimização | `client_key = HMAC-SHA256(PSEUDONYMIZATION_SALT, SK_ID_CURR)` na ingestão; salt no `.env` |
 | Observabilidade sem dado individual | Só agregados em logs, métricas, MLflow e Loki; teste automatizado varre as saídas em busca de IDs brutos |
 | Atributo de risco fora do modelo | `CODE_GENDER` apenas na auditoria |
@@ -380,7 +424,10 @@ O README traz uma tabela com métrica, tipo, labels, significado, limiar e alert
 - Treino: taxa de aprovação e TPR por gênero e por faixa etária (`<30`, `30–45`, `45–60`, `60+`),
   impacto disparato (grupo de menor taxa / grupo de maior taxa) e diferença de equal opportunity.
 - Teste de proxy: informação mútua de cada feature com `CODE_GENDER`.
-- Monitoramento mensal com `fairness_disparate_impact` e alerta `FairnessDegraded`.
+- Monitoramento mensal com `fairness_disparate_impact` e alerta `FairnessDegraded`, que dispara na
+  **degradação** em relação à referência (seção 6.3).
+- Achado permanente do modelo-base: impacto disparato por faixa etária cerca de 0,54 na referência, abaixo
+  do piso de 0,8. Não é drift, e exige decisão de governança antes de ir a produção.
 - Mitigações documentadas: ajuste de corte por grupo (com discussão jurídica) ou reponderação no retreino.
 
 ### 8.4 Análise causal (`drift/causal.py`, sobre o lote `06`)
@@ -450,3 +497,24 @@ Histórico semântico (Conventional Commits), um commit por unidade coerente: `d
 | Concept drift fraco demais para derrubar o AUC | Intensidades em `config.py`, calibradas até a queda passar o limiar em `05`/`06` |
 | Memória ao ler 307 mil linhas no Docker Desktop | `usecols` + dtypes compactos (`category`, `float32`) |
 | Download do Kaggle bloqueado | Caminho manual documentado |
+
+## Histórico de revisões
+
+**2026-10-27 — alinhamento com a implementação.** Decisões tomadas durante a execução, refletidas acima:
+
+- §2 e §3.1: portas do host sobrescrevíveis pelo `.env`; versões fixadas que diferem do plano
+  (`pyarrow==17.0.0`, `multimethod==1.10.0`, `sqlalchemy==2.0.36` na imagem do MLflow).
+- §3.3: `prepare --synthetic` (base sintética no mesmo schema, usada na demo e no CI).
+- §4.2 e §6.1: lotes mensais sorteados de forma independente do pool inteiro, com
+  `min(BATCH_SIZE, len(pool) // 6)` linhas; chaves do `manifest.json` (`injected_features` como verdade-base
+  e `drifted_features` como subconjunto detectável, mais `expected_rules` no `03-dirty`).
+- §5.1 e §5.2: contrato sobre `client_key`, rótulos nativos `column_missing`, `dtype_coercion` e
+  `validation_error`; lote bloqueado é copiado, não movido, para a quarentena.
+- §6.2: bins do PSI nos pontos médios da grade de 100 percentis da referência (robustos a empates), com o
+  alcance da correção; calibração relativa à referência (`scale_pos_weight`); KS hipersensível em variável
+  discretizada.
+- §6.3, §7.3, §7.4 e §8.3: regra de viés por degradação em relação à referência
+  (`FAIRNESS_DEGRADATION_MARGIN = 0,05`), métrica `credit_fairness_disparate_impact_reference`, nova expressão
+  do `FairnessDegraded`, `pipeline_stage_status = -1` para bloqueio e `batch_info`; achado permanente de viés
+  por idade.
+- §8.1: `usecols` com 21 colunas (a contagem de 18 estava errada).
