@@ -124,8 +124,12 @@ no `06` sem ablação = 0,298):
 | 5 | AMT_CREDIT | 0,254 | 14,8% | 0,5822 | -0,0066 | 2,210 |
 
 Leitura pelo DAG: as `EXT_SOURCE` (canal digital, perfil jovem com histórico curto) respondem pela maior
-parte do deslocamento do score; `YEARS_EMPLOYED` vem do ramo desaceleração, desemprego. Inflação e renda
-(`AMT_*`) deslocam o score pouco; `AMT_CREDIT` aparece em 5º, com recuperação de AUC negativa (ruído). Nenhuma ablação recupera a calibração nem o AUC de forma relevante
+parte do deslocamento do score; `YEARS_EMPLOYED` vem do ramo desaceleração, desemprego. As features `AMT_*`
+não são irrelevantes: o top 5 só ordena quem mais recupera o PSI do score quando restaurado sozinho
+(`AMT_CREDIT` é o 5º, 14,8%, com recuperação de AUC negativa, -0,0066; `AMT_ANNUITY` vem logo atrás, 14,6%).
+Recuperação de PSI **negativa** não é ruído, é cancelamento: restaurar sozinha `AMT_GOODS_PRICE` (-23,7%, PSI
+do score vai a 0,369) ou `AGE_YEARS` (-15,8%, vai a 0,346) piora o PSI do score, porque os deslocamentos se
+compensam parcialmente e desfazer só um deles desfaz parte do cancelamento. A renda sozinha recupera 0,8%. Nenhuma ablação recupera a calibração nem o AUC de forma relevante
 (calibração permanece em 2,2–2,4x): o estrago principal está no concept drift (rótulos), não nas
 covariáveis, o que justifica o retreino com dados recentes. |SHAP| médio, referência vs `06`: queda de
 `EXT_SOURCE_2` (0,377 para 0,267), `EXT_SOURCE_3` (0,382 para 0,327) e `EXT_SOURCE_1` (0,189 para 0,162);
@@ -166,6 +170,11 @@ PSI da renda por lote (inflação de 0, 2, 5, 8, 10 e 12%): antes 0,002; 0,491; 
 poucos níveis redondos mais valores avulsos; x1,02 dá PSI < 0,10 e x1,25 dá PSI ≥ 0,20 (o teste falha com a
 borda "próximo valor distinto"). Limiares inalterados. O teste de consistência com o Evidently e os gates de
 `DRIFT_EFFECTS` continuaram válidos na base sintética (176 testes passam).
+
+Alcance da correção: ela remove só o artefato "massa de empate sobre a borda", e apenas para deslocamentos
+menores que a distância entre dois níveis de preço consecutivos. Acima disso (por exemplo +5%), a massa cruza
+a borda de verdade e o PSI sobe, o que é medição legítima. A série "monotônica" vale para a renda; o
+`AMT_GOODS_PRICE`, também de valores redondos, segue não monotônico (seção 8, item 3).
 
 Ressalva restante: o KS continua alto em variável empatada (renda no `02`: D = 0,119, com PSI 0,001), porque
 deslocar uma massa de empate move a CDF de uma vez. Por isso a renda ainda é marcada como drift já no `02`,
