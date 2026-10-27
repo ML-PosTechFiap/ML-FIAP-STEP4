@@ -114,9 +114,7 @@ pagamento. O mês 3 chega sujo uma vez, e o simulador segue em frente. Cada lote
 **Mostrar:** painel **"PSI feature × lote"** (a matriz PSI no Grafana) e o painel **"Drift share e PSI
 do score"**.
 
-**Fala:** "Cada linha é uma feature, cada coluna um lote. No lote 02 esquentam o preço do bem e a renda; no 03, anuidade, prazo do crédito e tipo de renda; o EXT_SOURCE_2 só entra no 04, e no 05 já são 11 features. O drift share passa de 0,30 no lote 05 e chega a 59% no 06. Uso o tamanho do efeito do KS, não o p-valor, que satura com 20 mil linhas."
-primeiro. O drift share passa de 0,30 no lote 05 e chega a 59% no 06. Uso o tamanho do efeito do KS, não o
-p-valor, que satura com 20 mil linhas."
+**Fala:** "Cada linha é uma feature, cada coluna um lote. No 02, a renda já é sinalizada pelo KS e o preço do bem pelo PSI; o EXT_SOURCE_2 só entra no 04. O drift share passa de 0,30 no 05 e chega a 59% no 06."
 
 ### A4. Plano LGPD (3:05 a 3:25)
 
