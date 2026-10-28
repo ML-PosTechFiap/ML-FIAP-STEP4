@@ -10,3 +10,6 @@ mlruns/
 *.egg-info/
 .venv/
 .ruff_cache/
+
+# video gerado localmente (arquivo grande, fora do git)
+/docs/video/
