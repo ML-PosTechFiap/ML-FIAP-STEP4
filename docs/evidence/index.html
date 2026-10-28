@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Monitoramento do modelo de crédito - lotes</title>
+<style>
+body { font-family: sans-serif; margin: 2rem; color: #222; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #f0f0f0; }
+small { color: #666; }
+tr.ok td.status { color: #1a7f37; font-weight: bold; }
+tr.blocked td.status { color: #b42318; font-weight: bold; }
+tr.blocked { background: #fdf2f2; }
+.rec-OK { color: #1a7f37; font-weight: bold; }
+.rec-INVESTIGAR { color: #b26a00; font-weight: bold; }
+.rec-RETREINAR { color: #b42318; font-weight: bold; }
+</style>
+</head>
+<body>
+<h1>Monitoramento do modelo de crédito</h1>
+<p>Um lote por mês simulado. Lotes bloqueados não passaram no contrato de dados e não foram
+pontuados. Calibração é relativa à referência (1,00 = igual à da base de referência).</p>
+<table>
+<thead><tr><th>Lote</th><th>Status</th><th>Features com drift</th><th>Drift share</th><th>AUC</th><th>Calibração</th><th>Recomendação</th><th>Relatórios</th></tr></thead>
+<tbody>
+<tr class="ok"><td>01</td><td class="status">OK</td><td>0</td><td>0%</td><td>0,76</td><td>1,00</td><td class="rec-OK">OK</td><td><a href="drift/01_summary.json">resumo</a> <a href="drift/01_data_drift.html">drift</a> <a href="drift/01_performance.html">desempenho</a></td></tr>
+<tr class="ok"><td>02</td><td class="status">OK</td><td>2<br><small>AMT_GOODS_PRICE, AMT_INCOME_TOTAL</small></td><td>9%</td><td>0,74</td><td>1,05</td><td class="rec-OK">OK</td><td><a href="drift/02_summary.json">resumo</a> <a href="drift/02_data_drift.html">drift</a> <a href="drift/02_performance.html">desempenho</a></td></tr>
+<tr class="blocked"><td>03-dirty</td><td class="status">BLOQUEADO<br><small>age_range, client_key_unique, credit_positive, domain_NAME_CONTRACT_TYPE, ext_source_range, income_not_null</small></td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td><a href="contracts/03-dirty_failures.html">falhas do contrato</a> <a href="contracts/03-dirty_failures.json">json</a></td></tr>
+<tr class="ok"><td>03</td><td class="status">OK</td><td>5<br><small>AMT_ANNUITY, AMT_GOODS_PRICE, AMT_INCOME_TOTAL, CREDIT_TERM, NAME_INCOME_TYPE</small></td><td>23%</td><td>0,72</td><td>0,99</td><td class="rec-OK">OK</td><td><a href="drift/03_summary.json">resumo</a> <a href="drift/03_data_drift.html">drift</a> <a href="drift/03_performance.html">desempenho</a></td></tr>
+<tr class="ok"><td>04</td><td class="status">OK</td><td>6<br><small>AMT_ANNUITY, AMT_GOODS_PRICE, AMT_INCOME_TOTAL, CREDIT_TERM, EXT_SOURCE_2, NAME_INCOME_TYPE</small></td><td>27%</td><td>0,64</td><td>1,48</td><td class="rec-RETREINAR">RETREINAR</td><td><a href="drift/04_summary.json">resumo</a> <a href="drift/04_data_drift.html">drift</a> <a href="drift/04_performance.html">desempenho</a></td></tr>
+<tr class="ok"><td>05</td><td class="status">OK</td><td>11<br><small>AGE_YEARS, AMT_ANNUITY, AMT_GOODS_PRICE, AMT_INCOME_TOTAL, ANNUITY_INCOME_RATIO, CREDIT_TERM, EXT_SOURCE_1, EXT_SOURCE_2, EXT_SOURCE_3, NAME_INCOME_TYPE, YEARS_EMPLOYED</small></td><td>50%</td><td>0,60</td><td>1,85</td><td class="rec-RETREINAR">RETREINAR</td><td><a href="drift/05_summary.json">resumo</a> <a href="drift/05_data_drift.html">drift</a> <a href="drift/05_performance.html">desempenho</a></td></tr>
+<tr class="ok"><td>06</td><td class="status">OK</td><td>13<br><small>AGE_YEARS, AMT_ANNUITY, AMT_CREDIT, AMT_GOODS_PRICE, AMT_INCOME_TOTAL, ANNUITY_INCOME_RATIO, CREDIT_TERM, EXT_SOURCE_1, EXT_SOURCE_2, EXT_SOURCE_3, IS_UNEMPLOYED_OR_PENSIONER, NAME_INCOME_TYPE, YEARS_EMPLOYED</small></td><td>59%</td><td>0,58</td><td>2,16</td><td class="rec-RETREINAR">RETREINAR</td><td><a href="drift/06_summary.json">resumo</a> <a href="drift/06_data_drift.html">drift</a> <a href="drift/06_performance.html">desempenho</a></td></tr>
+</tbody>
+</table>
+</body>
+</html>

@@ -1,0 +1,188 @@
+import json
+
+import numpy as np
+import pandas as pd
+import pytest
+
+from credit_monitor.drift.detect import _alerts, analyze_batch, performance, recommend
+from credit_monitor.drift.stats import feature_drift_table, ks, psi
+
+rng = np.random.default_rng(0)
+
+
+def test_psi_identical_near_zero_and_shift_large():
+    x = pd.Series(rng.normal(size=20_000))
+    assert psi(x, x.sample(frac=1, random_state=1)) < 0.01
+    assert psi(x, x * 1.3 + 0.5) > 0.2
+
+
+def test_psi_tied_values_robust_to_small_shift():
+    # renda real: poucos niveis redondos com muita massa em cada um, mais valores raros avulsos
+    levels = np.array([67500.0, 112500.0, 135000.0, 157500.0, 202500.0, 270000.0])
+    common = rng.choice(levels, size=29_400, p=[0.1, 0.2, 0.25, 0.2, 0.15, 0.1])
+    x = pd.Series(np.concatenate([common, rng.uniform(60_000, 300_000, size=600).round(-2)]))
+    assert psi(x, x * 1.02) < 0.10
+    assert psi(x, x * 1.25) >= 0.20
+
+
+@pytest.mark.parametrize(
+    "ref,cur",
+    [
+        (pd.Series([1.0] * 1000), pd.Series(rng.normal(size=1000))),
+        (pd.Series(rng.normal(size=1000)), pd.Series([np.nan] * 1000)),
+        (pd.Series(["a", "b"] * 500), pd.Series(["c"] * 1000)),
+    ],
+)
+def test_psi_degenerate_is_finite(ref, cur):
+    assert np.isfinite(psi(ref, cur))
+
+
+def test_psi_detects_null_rate_change():
+    ref = pd.Series(np.where(rng.random(20_000) < 0.5, np.nan, rng.random(20_000)))
+    cur = pd.Series(np.where(rng.random(20_000) < 0.8, np.nan, rng.random(20_000)))
+    assert psi(ref, cur) > 0.2
+
+
+def test_psi_categorical_counts_missing_and_new_categories():
+    ref = pd.Series(["a"] * 500 + ["b"] * 500, dtype="category")
+    same = pd.Series(["a", "b"] * 500, dtype="category")
+    assert psi(ref, same) < 0.01
+    assert psi(ref, pd.Series(["a"] * 500 + [None] * 500)) > 0.2
+
+
+def test_ks_empty_side_is_zero():
+    assert ks(pd.Series([np.nan] * 10), pd.Series([1.0, 2.0])) == 0.0
+
+
+def test_performance_and_calibration():
+    y = np.array([0] * 90 + [1] * 10)
+    s = np.full(100, 0.05)
+    p = performance(y, s, cutoff=0.5)
+    assert p["calibration_ratio"] == pytest.approx(2.0) and p["approval_rate"] == 1.0
+
+
+def test_performance_relative_calibration_ratio():
+    y = np.array([0] * 90 + [1] * 10)
+    s = np.full(100, 0.05)
+    raw = performance(y, s, cutoff=0.5)
+    assert raw["calibration_ratio"] == raw["calibration_ratio_raw"] == pytest.approx(2.0)
+    # referencia com razao bruta 4,0: o lote esta 2x mais bem calibrado que ela (2,0 / 4,0)
+    rel = performance(y, s, cutoff=0.5, reference_factor=4.0)
+    assert rel["calibration_ratio_raw"] == pytest.approx(2.0)
+    assert rel["calibration_ratio"] == pytest.approx(0.5)
+
+
+def test_performance_single_class_has_no_auc_or_ks():
+    p = performance(np.zeros(50, dtype=int), np.linspace(0.01, 0.5, 50), cutoff=0.2)
+    assert p["auc"] is None and p["ks"] is None and p["default_rate_observed"] == 0.0
+
+
+def test_recommend_rules():
+    base = {
+        "dataset_drift_share": 0.0,
+        "prediction_psi": 0.0,
+        "fairness": {"gender": 1.0},
+        "performance": {"auc": 0.75, "calibration_ratio": 1.0},
+    }
+    assert recommend(base, 0.75) == "OK"
+    assert recommend({**base, "dataset_drift_share": 0.4}, 0.75) == "INVESTIGAR"
+    assert recommend({**base, "fairness": {"gender": 0.7}}, 0.75) == "INVESTIGAR"
+    assert (
+        recommend({**base, "performance": {"auc": 0.69, "calibration_ratio": 1.0}}, 0.75)
+        == "RETREINAR"
+    )
+    assert (
+        recommend({**base, "performance": {"auc": 0.75, "calibration_ratio": 1.4}}, 0.75)
+        == "RETREINAR"
+    )
+    assert recommend({**base, "performance": None, "prediction_psi": 0.3}, 0.75) == "INVESTIGAR"
+
+
+def test_recommend_fairness_flags_degradation_not_baseline():
+    base = {
+        "dataset_drift_share": 0.0,
+        "prediction_psi": 0.0,
+        "performance": {"auc": 0.75, "calibration_ratio": 1.0},
+        "fairness_reference": {"age_band": 0.54},
+    }
+    # baixo desde a referencia, sem piora (0,52 >= 0,54 - 0,05): sem motivo de vies
+    low = {**base, "fairness": {"age_band": 0.52}}
+    assert recommend(low, 0.75) == "OK"
+    assert not any("Impacto" in r for r in _alerts(low, 0.75)[1])
+    # piora de mais de 0,05 e abaixo de 0,8: investigar, com o texto da piora
+    worse = {**base, "fairness": {"age_band": 0.45}}
+    assert recommend(worse, 0.75) == "INVESTIGAR"
+    assert any("piorou em relação à referência" in r for r in _alerts(worse, 0.75)[1])
+    # piora, mas ainda acima de 0,8: sem motivo
+    ok = {**base, "fairness_reference": {"age_band": 0.99}, "fairness": {"age_band": 0.85}}
+    assert recommend(ok, 0.75) == "OK"
+    # sem referencia no resumo: vale a regra absoluta
+    assert recommend({**base, "fairness_reference": {}, "fairness": {"age_band": 0.52}}, 0.75) == "INVESTIGAR"
+
+
+def _scored_batch(settings, batch_id):
+    """Lote pseudonimizado e pontuado, como o `monitor` o entregara a `analyze_batch`."""
+    from credit_monitor.model.predict import load_model, score
+    from credit_monitor.privacy.pseudonymize import pseudonymize
+
+    pipeline, meta = load_model(settings)
+    batch_dir = settings.data_dir / "batches" / batch_id
+    cur = pseudonymize(pd.read_parquet(batch_dir / "batch.parquet"), settings.pseudonymization_salt)
+    cur["score"] = score(pipeline, cur)
+    manifest = json.loads((batch_dir / "manifest.json").read_text(encoding="utf-8"))
+    return cur, meta, manifest
+
+
+def test_analyze_batch_synthetic(trained, tmp_path):
+    ref = pd.read_parquet(trained.data_dir / "reference" / "test_scored.parquet")
+
+    cur01, meta, manifest01 = _scored_batch(trained, "01")
+    s01 = analyze_batch(ref, cur01, "01", meta, tmp_path)
+    assert s01["drifted_features"] == [] and manifest01["drifted_features"] == []
+    assert s01["performance"] is not None and s01["recommendation"] == "OK"
+    # relativo a referencia: ~1,0 num lote sem drift (o bruto fica longe de 1: scale_pos_weight)
+    assert 0.8 < s01["performance"]["calibration_ratio"] < 1.2
+    assert s01["performance"]["calibration_ratio_raw"] < 0.5
+
+    cur06, meta, manifest06 = _scored_batch(trained, "06")
+    s06 = analyze_batch(ref, cur06, "06", meta, tmp_path)
+    assert set(manifest06["drifted_features"]) <= set(s06["drifted_features"])
+    assert s06["recommendation"] in {"INVESTIGAR", "RETREINAR"}
+    assert (tmp_path / "06_data_drift.html").exists()
+    assert (tmp_path / "06_performance.html").exists()
+    assert (tmp_path / "06_data_drift.json").exists()
+
+    table = feature_drift_table(ref, cur06).set_index("feature")
+    own, evidently = table.loc["AMT_INCOME_TOTAL", "psi"], s06["psi"]["AMT_INCOME_TOTAL"]
+    assert abs(own - evidently) < 0.05
+    assert "score" in s06["psi"]
+
+    saved = json.loads((tmp_path / "06_summary.json").read_text(encoding="utf-8"))
+    assert saved["batch_id"] == "06" and saved["recommendation"] == s06["recommendation"]
+    text = json.dumps(saved)
+    assert "SK_ID_CURR" not in text and "client_key" not in text
+
+
+def test_analyze_batch_without_target_skips_labeled_metrics(trained, tmp_path):
+    ref = pd.read_parquet(trained.data_dir / "reference" / "test_scored.parquet")
+    cur, meta, _ = _scored_batch(trained, "06")
+    summary = analyze_batch(ref, cur.drop(columns=["TARGET"]), "06", meta, tmp_path)
+    assert summary["performance"] is None and summary["labeled"] is False
+    assert not (tmp_path / "06_performance.html").exists()
+    assert summary["recommendation"] in {"OK", "INVESTIGAR"}
+
+
+@pytest.mark.parametrize("batch_id", ["01", "02", "03", "04", "05", "06"])
+def test_manifest_features_are_detected(trained, batch_id):
+    """Manifest: `drifted_features` (esperado detectavel) tem revocacao 1 e e subconjunto de
+    `injected_features` (verdade-base). No lote 01 ambos sao vazios."""
+    ref = pd.read_parquet(trained.data_dir / "reference" / "test_scored.parquet")
+    batch_dir = trained.data_dir / "batches" / batch_id
+    manifest = json.loads((batch_dir / "manifest.json").read_text(encoding="utf-8"))
+    table = feature_drift_table(ref, pd.read_parquet(batch_dir / "batch.parquet"))
+    detected = set(table.loc[table["status"] == "drift", "feature"])
+    assert set(manifest["drifted_features"]) <= set(manifest["injected_features"])
+    assert set(manifest["drifted_features"]) <= detected
+    if batch_id == "01":
+        assert manifest["injected_features"] == [] and manifest["drifted_features"] == []
+        assert detected == set()

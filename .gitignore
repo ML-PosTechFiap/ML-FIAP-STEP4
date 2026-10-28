@@ -1,0 +1,12 @@
+/data/
+/reports/
+/models/
+.env
+__pycache__/
+.pytest_cache/
+mlruns/
+/home-credit-default-risk/
+/MLET - Tech Challenge - Fase 4.pdf
+*.egg-info/
+.venv/
+.ruff_cache/

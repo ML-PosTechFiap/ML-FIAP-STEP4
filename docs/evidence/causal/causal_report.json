@@ -1,0 +1,251 @@
+{
+  "batch_id": "06",
+  "decomposition": {
+    "auc_reference": 0.7576758865290405,
+    "auc_covariate_only": 0.7334595062835464,
+    "auc_total": 0.5833024636793263,
+    "drop_covariate": 0.024216380245494107,
+    "drop_concept": 0.15015704260422014
+  },
+  "ablation": [
+    {
+      "feature": "EXT_SOURCE_2",
+      "prediction_psi_after": 0.08051504356933493,
+      "auc_after": 0.5866754653890359,
+      "calibration_after": 2.3742595417474117,
+      "psi_recovery": 0.7301918914476756,
+      "auc_recovery": 0.01934355393491775
+    },
+    {
+      "feature": "EXT_SOURCE_3",
+      "prediction_psi_after": 0.1296046295916354,
+      "auc_after": 0.5838079343424067,
+      "calibration_after": 2.32894757031755,
+      "psi_recovery": 0.5656913488517087,
+      "auc_recovery": 0.0028987827090836715
+    },
+    {
+      "feature": "YEARS_EMPLOYED",
+      "prediction_psi_after": 0.24509833668863823,
+      "auc_after": 0.5881799653758786,
+      "calibration_after": 2.199152836299973,
+      "psi_recovery": 0.1786687841218727,
+      "auc_recovery": 0.027971588885744667
+    },
+    {
+      "feature": "EXT_SOURCE_1",
+      "prediction_psi_after": 0.24935908930335016,
+      "auc_after": 0.584426758048848,
+      "calibration_after": 2.1913895443676537,
+      "psi_recovery": 0.16439088581837322,
+      "auc_recovery": 0.006447624592944754
+    },
+    {
+      "feature": "AMT_CREDIT",
+      "prediction_psi_after": 0.25425212794245267,
+      "auc_after": 0.5821551606878718,
+      "calibration_after": 2.209901524005327,
+      "psi_recovery": 0.1479941797897312,
+      "auc_recovery": -0.00657957487273337
+    },
+    {
+      "feature": "AMT_ANNUITY",
+      "prediction_psi_after": 0.2547532055660276,
+      "auc_after": 0.5846717880123151,
+      "calibration_after": 2.2081509253632543,
+      "psi_recovery": 0.1463150549968815,
+      "auc_recovery": 0.007852827057074126
+    },
+    {
+      "feature": "NAME_INCOME_TYPE",
+      "prediction_psi_after": 0.2778251957597021,
+      "auc_after": 0.5800629772074545,
+      "calibration_after": 2.1748160522277793,
+      "psi_recovery": 0.06900018613846158,
+      "auc_recovery": -0.018577868226305142
+    },
+    {
+      "feature": "CREDIT_TERM",
+      "prediction_psi_after": 0.28564839072594883,
+      "auc_after": 0.5822288045857132,
+      "calibration_after": 2.148305021430692,
+      "psi_recovery": 0.042784446282822956,
+      "auc_recovery": -0.006157240455951572
+    },
+    {
+      "feature": "ANNUITY_INCOME_RATIO",
+      "prediction_psi_after": 0.2891438804014373,
+      "auc_after": 0.5845889080503862,
+      "calibration_after": 2.163256806184155,
+      "psi_recovery": 0.031070964975499726,
+      "auc_recovery": 0.007377525485455976
+    },
+    {
+      "feature": "AMT_INCOME_TOTAL",
+      "prediction_psi_after": 0.2958995925896821,
+      "auc_after": 0.5831149182078329,
+      "calibration_after": 2.1582505919726,
+      "psi_recovery": 0.008432389044474131,
+      "auc_recovery": -0.001075539313436508
+    },
+    {
+      "feature": "IS_UNEMPLOYED_OR_PENSIONER",
+      "prediction_psi_after": 0.2984334358444181,
+      "auc_after": 0.5833061254896468,
+      "calibration_after": 2.1555265215318307,
+      "psi_recovery": -5.8588860042079175e-05,
+      "auc_recovery": 2.0999819012998416e-05
+    },
+    {
+      "feature": "AGE_YEARS",
+      "prediction_psi_after": 0.3455404554569712,
+      "auc_after": 0.5799776140340733,
+      "calibration_after": 2.111573927356787,
+      "psi_recovery": -0.15791549730542098,
+      "auc_recovery": -0.019067410565877838
+    },
+    {
+      "feature": "AMT_GOODS_PRICE",
+      "prediction_psi_after": 0.3690607393010467,
+      "auc_after": 0.5832430148559051,
+      "calibration_after": 2.085766117156391,
+      "psi_recovery": -0.23673261042191612,
+      "auc_recovery": -0.00034092823579177673
+    }
+  ],
+  "shap": [
+    {
+      "feature": "EXT_SOURCE_2",
+      "reference": 0.37731489539146423,
+      "batch": 0.2670055329799652,
+      "delta": -0.11030936241149902
+    },
+    {
+      "feature": "EXT_SOURCE_3",
+      "reference": 0.38243916630744934,
+      "batch": 0.3271614611148834,
+      "delta": -0.05527770519256592
+    },
+    {
+      "feature": "EXT_SOURCE_1",
+      "reference": 0.18861231207847595,
+      "batch": 0.16228893399238586,
+      "delta": -0.026323378086090088
+    },
+    {
+      "feature": "CREDIT_TERM",
+      "reference": 0.19047655165195465,
+      "batch": 0.16950103640556335,
+      "delta": -0.020975515246391296
+    },
+    {
+      "feature": "AGE_YEARS",
+      "reference": 0.06499829143285751,
+      "batch": 0.08583184331655502,
+      "delta": 0.02083355188369751
+    },
+    {
+      "feature": "AMT_GOODS_PRICE",
+      "reference": 0.21910734474658966,
+      "batch": 0.2382321059703827,
+      "delta": 0.01912476122379303
+    },
+    {
+      "feature": "YEARS_EMPLOYED",
+      "reference": 0.15767253935337067,
+      "batch": 0.1468553990125656,
+      "delta": -0.010817140340805054
+    },
+    {
+      "feature": "NAME_EDUCATION_TYPE",
+      "reference": 0.12691380083560944,
+      "batch": 0.13742904365062714,
+      "delta": 0.0105152428150177
+    },
+    {
+      "feature": "AMT_ANNUITY",
+      "reference": 0.11162787675857544,
+      "batch": 0.1039150059223175,
+      "delta": -0.007712870836257935
+    },
+    {
+      "feature": "AMT_INCOME_TOTAL",
+      "reference": 0.028959153220057487,
+      "batch": 0.02457462251186371,
+      "delta": -0.004384530708193779
+    },
+    {
+      "feature": "AMT_CREDIT",
+      "reference": 0.1043107882142067,
+      "batch": 0.10048947483301163,
+      "delta": -0.0038213133811950684
+    },
+    {
+      "feature": "CNT_FAM_MEMBERS",
+      "reference": 0.017453085631132126,
+      "batch": 0.013735044747591019,
+      "delta": -0.003718040883541107
+    },
+    {
+      "feature": "NAME_FAMILY_STATUS",
+      "reference": 0.045906927436590195,
+      "batch": 0.04239412024617195,
+      "delta": -0.0035128071904182434
+    },
+    {
+      "feature": "FLAG_OWN_CAR",
+      "reference": 0.07041783630847931,
+      "batch": 0.0736742913722992,
+      "delta": 0.0032564550638198853
+    },
+    {
+      "feature": "ANNUITY_INCOME_RATIO",
+      "reference": 0.03477853536605835,
+      "batch": 0.03219576179981232,
+      "delta": -0.0025827735662460327
+    },
+    {
+      "feature": "NAME_CONTRACT_TYPE",
+      "reference": 0.06804097443819046,
+      "batch": 0.07027078419923782,
+      "delta": 0.0022298097610473633
+    },
+    {
+      "feature": "NAME_INCOME_TYPE",
+      "reference": 0.04939676448702812,
+      "batch": 0.04785935953259468,
+      "delta": -0.0015374049544334412
+    },
+    {
+      "feature": "FLAG_OWN_REALTY",
+      "reference": 0.011971490457654,
+      "batch": 0.010985582135617733,
+      "delta": -0.0009859083220362663
+    },
+    {
+      "feature": "CREDIT_INCOME_RATIO",
+      "reference": 0.03029497154057026,
+      "batch": 0.03054974414408207,
+      "delta": 0.0002547726035118103
+    },
+    {
+      "feature": "NAME_HOUSING_TYPE",
+      "reference": 0.022236669436097145,
+      "batch": 0.022347303107380867,
+      "delta": 0.00011063367128372192
+    },
+    {
+      "feature": "IS_UNEMPLOYED_OR_PENSIONER",
+      "reference": 0.0001845013612182811,
+      "batch": 0.00014219192962627858,
+      "delta": -4.230943159200251e-05
+    },
+    {
+      "feature": "CNT_CHILDREN",
+      "reference": 0.0060905455611646175,
+      "batch": 0.006075704470276833,
+      "delta": -1.4841090887784958e-05
+    }
+  ],
+  "notes": "As intervenções (mapeamento de quantis feature a feature e a comparação entre rótulos originais e novos) só têm leitura causal porque a simulação controla o processo gerador dos dados: sabemos exatamente o que foi alterado em X e quais rótulos foram invertidos. Com dados reais seriam apenas associações. A ablação restaura a distribuição marginal de cada feature e não preserva a dependência entre features."
+}

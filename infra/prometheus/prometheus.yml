@@ -1,0 +1,29 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+rule_files:
+  - alerts.yml
+
+scrape_configs:
+  # honor_labels preserva job/batch/instance das metricas empurradas pelo pipeline.
+  - job_name: pushgateway
+    honor_labels: true
+    static_configs:
+      - targets: ["pushgateway:9091"]
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: mlflow
+    static_configs:
+      - targets: ["mlflow:5000"]
+
+  - job_name: grafana
+    static_configs:
+      - targets: ["grafana:3000"]
+
+  - job_name: loki
+    static_configs:
+      - targets: ["loki:3100"]

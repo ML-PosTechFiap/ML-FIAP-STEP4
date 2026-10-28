@@ -1,0 +1,236 @@
+{
+  "batch_id": "06",
+  "labeled": true,
+  "features": [
+    {
+      "feature": "AMT_INCOME_TOTAL",
+      "kind": "numeric",
+      "psi": 0.6536293428451142,
+      "ks": 0.14820618789521228,
+      "status": "drift"
+    },
+    {
+      "feature": "AMT_CREDIT",
+      "kind": "numeric",
+      "psi": 0.17091866986924253,
+      "ks": 0.12281802168021683,
+      "status": "drift"
+    },
+    {
+      "feature": "AMT_ANNUITY",
+      "kind": "numeric",
+      "psi": 0.27447320592974794,
+      "ks": 0.22458242999096656,
+      "status": "drift"
+    },
+    {
+      "feature": "AMT_GOODS_PRICE",
+      "kind": "numeric",
+      "psi": 0.4895309703649735,
+      "ks": 0.16202251224425623,
+      "status": "drift"
+    },
+    {
+      "feature": "AGE_YEARS",
+      "kind": "numeric",
+      "psi": 0.23290087393942766,
+      "ks": 0.22134254742547424,
+      "status": "drift"
+    },
+    {
+      "feature": "YEARS_EMPLOYED",
+      "kind": "numeric",
+      "psi": 0.19994262171901317,
+      "ks": 0.1678239899820385,
+      "status": "drift"
+    },
+    {
+      "feature": "IS_UNEMPLOYED_OR_PENSIONER",
+      "kind": "numeric",
+      "psi": 0.07473225449181727,
+      "ks": 0.11618789521228545,
+      "status": "drift"
+    },
+    {
+      "feature": "CNT_CHILDREN",
+      "kind": "numeric",
+      "psi": 0.0014648625236596796,
+      "ks": 0.012281029810298105,
+      "status": "ok"
+    },
+    {
+      "feature": "CNT_FAM_MEMBERS",
+      "kind": "numeric",
+      "psi": 0.0058592688239514435,
+      "ks": 0.023826212087478787,
+      "status": "ok"
+    },
+    {
+      "feature": "EXT_SOURCE_1",
+      "kind": "numeric",
+      "psi": 0.0710645555249601,
+      "ks": 0.12287272742237282,
+      "status": "drift"
+    },
+    {
+      "feature": "EXT_SOURCE_2",
+      "kind": "numeric",
+      "psi": 1.32788222915916,
+      "ks": 0.2995433428061396,
+      "status": "drift"
+    },
+    {
+      "feature": "EXT_SOURCE_3",
+      "kind": "numeric",
+      "psi": 0.6716317306007625,
+      "ks": 0.23073511222528498,
+      "status": "drift"
+    },
+    {
+      "feature": "CREDIT_INCOME_RATIO",
+      "kind": "numeric",
+      "psi": 0.008388372633812011,
+      "ks": 0.04166382113821138,
+      "status": "ok"
+    },
+    {
+      "feature": "ANNUITY_INCOME_RATIO",
+      "kind": "numeric",
+      "psi": 0.10362569361993813,
+      "ks": 0.1365297651309847,
+      "status": "drift"
+    },
+    {
+      "feature": "CREDIT_TERM",
+      "kind": "numeric",
+      "psi": 0.38239673031546045,
+      "ks": 0.25098509485094855,
+      "status": "drift"
+    },
+    {
+      "feature": "NAME_CONTRACT_TYPE",
+      "kind": "categorical",
+      "psi": 0.0028954852459863695,
+      "ks": null,
+      "status": "ok"
+    },
+    {
+      "feature": "NAME_INCOME_TYPE",
+      "kind": "categorical",
+      "psi": 1.2303900544092814,
+      "ks": null,
+      "status": "drift"
+    },
+    {
+      "feature": "NAME_EDUCATION_TYPE",
+      "kind": "categorical",
+      "psi": 0.011442656603461925,
+      "ks": null,
+      "status": "ok"
+    },
+    {
+      "feature": "NAME_FAMILY_STATUS",
+      "kind": "categorical",
+      "psi": 0.021476752731484028,
+      "ks": null,
+      "status": "ok"
+    },
+    {
+      "feature": "NAME_HOUSING_TYPE",
+      "kind": "categorical",
+      "psi": 0.018563124072716673,
+      "ks": null,
+      "status": "ok"
+    },
+    {
+      "feature": "FLAG_OWN_CAR",
+      "kind": "categorical",
+      "psi": 0.0006946148756519469,
+      "ks": null,
+      "status": "ok"
+    },
+    {
+      "feature": "FLAG_OWN_REALTY",
+      "kind": "categorical",
+      "psi": 0.0031408736205187017,
+      "ks": null,
+      "status": "ok"
+    }
+  ],
+  "drifted_features": [
+    "AGE_YEARS",
+    "AMT_ANNUITY",
+    "AMT_CREDIT",
+    "AMT_GOODS_PRICE",
+    "AMT_INCOME_TOTAL",
+    "ANNUITY_INCOME_RATIO",
+    "CREDIT_TERM",
+    "EXT_SOURCE_1",
+    "EXT_SOURCE_2",
+    "EXT_SOURCE_3",
+    "IS_UNEMPLOYED_OR_PENSIONER",
+    "NAME_INCOME_TYPE",
+    "YEARS_EMPLOYED"
+  ],
+  "dataset_drift_share": 0.5909090909090909,
+  "prediction_psi": 0.2984159519939724,
+  "performance": {
+    "auc": 0.5833024636793263,
+    "ks": 0.124021883393579,
+    "default_rate_observed": 0.21475,
+    "mean_predicted_pd": 0.48769791653379796,
+    "calibration_ratio": 2.155539394401351,
+    "calibration_ratio_raw": 0.44033405253458285,
+    "approval_rate": 0.43095
+  },
+  "fairness": {
+    "gender": 0.8265971155554456,
+    "age_band": 0.5304663126723144
+  },
+  "fairness_reference": {
+    "gender": 0.8605860750724548,
+    "age_band": 0.5409630019145819
+  },
+  "evidently": {
+    "data_drift": {
+      "html": "06_data_drift.html",
+      "json": "06_data_drift.json"
+    },
+    "performance": {
+      "html": "06_performance.html",
+      "json": "06_performance.json"
+    }
+  },
+  "psi": {
+    "AMT_INCOME_TOTAL": 0.014216055416798119,
+    "AMT_CREDIT": 0.07948796619517824,
+    "AMT_ANNUITY": 0.24413467675859712,
+    "AMT_GOODS_PRICE": 0.06667858639984538,
+    "AGE_YEARS": 0.2458839483354336,
+    "YEARS_EMPLOYED": 0.1998755601397713,
+    "IS_UNEMPLOYED_OR_PENSIONER": 0.07475908712489106,
+    "CNT_CHILDREN": 0.0025336534121485456,
+    "CNT_FAM_MEMBERS": 0.006457367147166582,
+    "EXT_SOURCE_1": 0.079942114675775,
+    "EXT_SOURCE_2": 1.9629439782374323,
+    "EXT_SOURCE_3": 0.7462014834519629,
+    "CREDIT_INCOME_RATIO": 0.015842461876237307,
+    "ANNUITY_INCOME_RATIO": 0.09953974132552985,
+    "CREDIT_TERM": 0.40770870553749716,
+    "score": 0.30161173239082284,
+    "NAME_CONTRACT_TYPE": 0.0028981010823876576,
+    "NAME_INCOME_TYPE": 1.4530866168825098,
+    "NAME_EDUCATION_TYPE": 0.011468353534046863,
+    "NAME_FAMILY_STATUS": 0.021513717136868792,
+    "NAME_HOUSING_TYPE": 0.01860870312738434,
+    "FLAG_OWN_CAR": 0.0006947836062569382,
+    "FLAG_OWN_REALTY": 0.003141706194448789
+  },
+  "recommendation": "RETREINAR",
+  "recommendation_reasons": [
+    "AUC 0.583 caiu mais de 0.05 abaixo da referência (0.758).",
+    "Calibração: a razão observado/previsto é 2.16x a da referência (limite 1.3).",
+    "59% das features com drift (limite 30%).",
+    "PSI do score 0.298 (limite 0.2)."
+  ]
+}
