@@ -783,7 +783,8 @@ Relatório completo: [`docs/evidence/causal/causal_report.html`](docs/evidence/c
 
 ## 10. Vídeo
 
-Roteiro STAR cronometrado (até 5 minutos), com comandos e painéis por bloco:
-[`docs/roteiro-video.md`](docs/roteiro-video.md).
+**Link do vídeo:** https://youtu.be/owjv5kFdbZ4 (4:50)
 
-Link do vídeo: _a preencher após a gravação_
+Roteiro STAR cronometrado (até 5 minutos), com comandos e painéis por bloco:
+[`docs/roteiro-video.md`](docs/roteiro-video.md). Texto da narração, sincronizado com as cenas:
+[`docs/narracao-video.md`](docs/narracao-video.md).
