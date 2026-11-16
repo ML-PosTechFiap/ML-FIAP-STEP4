@@ -1,6 +1,6 @@
 # Monitoramento contínuo de um modelo de Credit Scoring
 
-Tech Challenge, Fase 4 (pós-graduação em MLOps). Projeto individual de João Belletati.
+Tech Challenge, Fase 4 (pós-graduação em MLOps).
 
 Este repositório constrói a camada de **sustentação e confiabilidade** de um modelo de credit scoring de
 uma fintech: contrato de dados que bloqueia lotes ruins, simulação de degradação ao longo de seis meses
